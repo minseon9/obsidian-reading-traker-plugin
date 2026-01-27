@@ -1,6 +1,8 @@
 import esbuild from "esbuild";
 import process from "process";
 import { builtinModules } from 'node:module';
+import { readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
 
 const banner =
 `/*
@@ -10,6 +12,31 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = (process.argv[2] === "production");
+
+// Bundle CSS files from styles folder
+function bundleCSS() {
+	const stylesDir = 'styles';
+	const cssFiles = [
+		'searchModal.css',
+	];
+	
+	let bundledCSS = '/* Bookshelf Plugin Styles */\n\n';
+	
+	cssFiles.forEach(file => {
+		try {
+			const content = readFileSync(join(stylesDir, file), 'utf-8');
+			bundledCSS += `/* ${file} */\n${content}\n\n`;
+		} catch (error) {
+			console.warn(`Warning: Could not read ${file}:`, error);
+		}
+	});
+	
+	writeFileSync('styles.css', bundledCSS);
+	console.log('CSS bundled to styles.css');
+}
+
+// Bundle CSS before building
+bundleCSS();
 
 const context = await esbuild.context({
 	banner: {

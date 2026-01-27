@@ -28,7 +28,7 @@ export interface BookshelfSettings {
  * Default settings
  */
 export const DEFAULT_SETTINGS: BookshelfSettings = {
-	bookFolder: 'Books',
+	bookFolder: 'Bookshelf',
 	templateFile: 'template_example.md',
 	apiTimeout: 5000,
 	showCoverImages: true,
