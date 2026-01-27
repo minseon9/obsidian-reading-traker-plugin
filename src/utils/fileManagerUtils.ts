@@ -2,6 +2,7 @@ import { App, TFile, TFolder, normalizePath } from 'obsidian';
 import { Book } from '../models/book';
 import { TemplateProcessor } from './templateUtils';
 import { FrontmatterProcessor } from './frontmatterUtils';
+import { ValidationUtils } from './validationUtils';
 
 /**
  * File manager for book notes
@@ -161,8 +162,14 @@ export class FileManagerUtils {
 	 * @param file File to update
 	 * @param page Current page number
 	 * @param notes Optional notes
+	 * @param autoStatusChange Whether to auto-change status (default: true)
 	 */
-	async updateReadingProgress(file: TFile, page: number, notes?: string): Promise<void> {
+	async updateReadingProgress(
+		file: TFile, 
+		page: number, 
+		notes?: string,
+		autoStatusChange: boolean = true
+	): Promise<void> {
 		const content = await this.app.vault.read(file);
 		const { frontmatter } = this.frontmatterProcessor.extractFrontmatter(content);
 
@@ -176,7 +183,8 @@ export class FileManagerUtils {
 			content,
 			page,
 			totalPages,
-			notes
+			notes,
+			autoStatusChange
 		);
 
 		await this.app.vault.modify(file, updatedContent);
@@ -185,11 +193,19 @@ export class FileManagerUtils {
 	/**
 	 * Get book data from file
 	 * @param file File to read
+	 * @param validate Whether to validate and fix data (default: true)
 	 * @returns Book data
 	 */
-	async getBookFromFile(file: TFile): Promise<Partial<Book>> {
+	async getBookFromFile(file: TFile, validate: boolean = true): Promise<Partial<Book>> {
 		const content = await this.app.vault.read(file);
 		const { frontmatter } = this.frontmatterProcessor.extractFrontmatter(content);
-		return this.frontmatterProcessor.frontmatterToBook(frontmatter);
+		const book = this.frontmatterProcessor.frontmatterToBook(frontmatter);
+		
+		// Validate and fix if requested
+		if (validate) {
+			return ValidationUtils.validateAndFixBook(book);
+		}
+		
+		return book;
 	}
 }

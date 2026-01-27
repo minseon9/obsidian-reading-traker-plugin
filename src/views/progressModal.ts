@@ -227,7 +227,14 @@ export class ProgressUpdateModal extends Modal {
 
 		const startPage = parseInt(this.startPageInput.value, 10) || 0;
 		const endPage = parseInt(this.endPageInput.value, 10) || 0;
-		const notes = this.notesInput.value.trim() || undefined;
+		let notes = this.notesInput.value.trim() || undefined;
+
+		// Check if notes are required
+		if (this.plugin.settings.requireReadingNotes && !notes) {
+			const errorEl = this.contentEl.querySelector('.bookshelf-error') || this.contentEl.createEl('div', { cls: 'bookshelf-error' });
+			errorEl.textContent = 'Notes are required when updating progress.';
+			return;
+		}
 
 		if (endPage < startPage) {
 			// Show error
@@ -237,7 +244,24 @@ export class ProgressUpdateModal extends Modal {
 		}
 
 		try {
-			await this.fileManager.updateReadingProgress(this.file, endPage, notes);
+			await this.fileManager.updateReadingProgress(
+				this.file, 
+				endPage, 
+				notes,
+				this.plugin.settings.autoStatusChange
+			);
+
+			// Show notification if enabled
+			if (this.plugin.settings.showProgressNotification) {
+				// Refresh Bookshelf View if open
+				const leaves = this.app.workspace.getLeavesOfType('bookshelf-view');
+				leaves.forEach(leaf => {
+					const view = leaf.view as any;
+					if (view && typeof view.refresh === 'function') {
+						view.refresh();
+					}
+				});
+			}
 			
 			// Show success message
 			const successEl = this.contentEl.createEl('div', {

@@ -1,4 +1,4 @@
-import { Plugin, MarkdownView } from 'obsidian';
+import { Plugin, MarkdownView, TFile, TAbstractFile } from 'obsidian';
 import { DEFAULT_SETTINGS, BookshelfSettings, BookshelfSettingTab } from "./settings";
 import { registerCommands } from "./commands";
 import { FileManagerUtils } from "./utils/fileManagerUtils";
@@ -49,7 +49,9 @@ export default class BookshelfPlugin extends Plugin {
 		// Add progress update button to book notes
 		this.registerEvent(
 			this.app.workspace.on('file-open', (file) => {
-				this.addProgressButtonToNote(file);
+				if (file instanceof TFile) {
+					this.addProgressButtonToNote(file);
+				}
 			})
 		);
 
@@ -58,12 +60,17 @@ export default class BookshelfPlugin extends Plugin {
 		if (activeFile) {
 			this.addProgressButtonToNote(activeFile);
 		}
+
+		// Register auto-update timestamp if enabled
+		if (this.settings.autoUpdateTimestamp) {
+			this.registerAutoUpdateTimestamp();
+		}
 	}
 
 	/**
 	 * Add progress update button to book note
 	 */
-	private async addProgressButtonToNote(file: any): Promise<void> {
+	private async addProgressButtonToNote(file: TFile): Promise<void> {
 		if (!file || file.extension !== 'md') {
 			return;
 		}
@@ -123,6 +130,56 @@ export default class BookshelfPlugin extends Plugin {
 
 	async onunload() {
 		this.app.workspace.detachLeavesOfType('bookshelf-view');
+	}
+
+	/**
+	 * Register auto-update timestamp (public for settings tab)
+	 */
+	registerAutoUpdateTimestamp(): void {
+		const fileManager = new FileManagerUtils(this.app);
+		const booksFolder = fileManager.getBooksFolderPath(this.settings.bookFolder);
+
+		// Listen for file modifications
+		this.registerEvent(
+			this.app.vault.on('modify', async (file: TAbstractFile) => {
+				// Only process markdown files in books folder
+				if (!(file instanceof TFile) || file.extension !== 'md' || !file.path.startsWith(booksFolder)) {
+					return;
+				}
+
+				// Skip if auto-update is disabled
+				if (!this.settings.autoUpdateTimestamp) {
+					return;
+				}
+
+				try {
+					const content = await this.app.vault.read(file);
+					const frontmatterProcessor = (fileManager as any).frontmatterProcessor;
+					const { frontmatter, body } = frontmatterProcessor.extractFrontmatter(content);
+
+					// Only update if it's a book note (has title)
+					if (!frontmatter.title) {
+						return;
+					}
+
+					// Update timestamp
+					const { getCurrentDateTime } = require('./utils/dateUtils');
+					frontmatter.updated = getCurrentDateTime();
+
+					// Reconstruct content
+					const frontmatterString = frontmatterProcessor.createFrontmatter(frontmatter);
+					const newContent = `${frontmatterString}\n${body}`;
+
+					// Write back (avoid infinite loop by checking if changed)
+					if (content !== newContent) {
+						await this.app.vault.modify(file, newContent);
+					}
+				} catch (error) {
+					// Silently ignore errors (e.g., file is being edited)
+					console.debug('Auto-update timestamp error:', error);
+				}
+			})
+		);
 	}
 
 	async activateView() {

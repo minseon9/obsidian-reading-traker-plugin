@@ -8,17 +8,29 @@ export interface BookshelfSettings {
 	// Folder settings
 	bookFolder: string; // Base folder (e.g., "Bookshelf")
 	templateFile: string;
+	coverImageFolder?: string;
 
 	// API settings
 	apiTimeout: number;
+	searchResultLimit: number;
 
 	// UI settings
 	showCoverImages: boolean;
 	coverImageSize: 'S' | 'M' | 'L';
 	saveCoverLocally: boolean;
 
+	// Bookshelf View settings
+	viewLayout: 'grid' | 'list';
+	defaultSort: 'date' | 'title' | 'author' | 'progress';
+
 	// Auto update
 	autoUpdateTimestamp: boolean;
+	autoStatusChange: boolean; // Auto change status when finished
+	showProgressNotification: boolean;
+
+	// Reading history
+	trackReadingHistory: boolean;
+	requireReadingNotes: boolean;
 
 	// Default values
 	defaultStatus: 'unread' | 'reading';
@@ -30,11 +42,19 @@ export interface BookshelfSettings {
 export const DEFAULT_SETTINGS: BookshelfSettings = {
 	bookFolder: 'Bookshelf',
 	templateFile: 'template_example.md',
+	coverImageFolder: '',
 	apiTimeout: 5000,
+	searchResultLimit: 20,
 	showCoverImages: true,
 	coverImageSize: 'M',
 	saveCoverLocally: false,
+	viewLayout: 'grid',
+	defaultSort: 'date',
 	autoUpdateTimestamp: true,
+	autoStatusChange: true,
+	showProgressNotification: true,
+	trackReadingHistory: true,
+	requireReadingNotes: false,
 	defaultStatus: 'unread',
 };
 
@@ -98,6 +118,20 @@ export class BookshelfSettingTab extends PluginSettingTab {
 					}
 				}));
 
+		new Setting(containerEl)
+			.setName('Search result limit')
+			.setDesc('Maximum number of search results to display')
+			.addText(text => text
+				.setPlaceholder('20')
+				.setValue(this.plugin.settings.searchResultLimit.toString())
+				.onChange(async (value) => {
+					const limit = parseInt(value, 10);
+					if (!isNaN(limit) && limit > 0) {
+						this.plugin.settings.searchResultLimit = limit;
+						await this.plugin.saveSettings();
+					}
+				}));
+
 		// Image settings
 		containerEl.createEl('h3', { text: 'Image Settings' });
 
@@ -134,6 +168,17 @@ export class BookshelfSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
+		new Setting(containerEl)
+			.setName('Cover image folder')
+			.setDesc('Folder path for locally saved cover images (only used if "Save cover images locally" is enabled)')
+			.addText(text => text
+				.setPlaceholder('Bookshelf/.bookshelf/covers')
+				.setValue(this.plugin.settings.coverImageFolder || '')
+				.onChange(async (value) => {
+					this.plugin.settings.coverImageFolder = value;
+					await this.plugin.saveSettings();
+				}));
+
 		// Auto update settings
 		containerEl.createEl('h3', { text: 'Auto Update' });
 
@@ -144,6 +189,82 @@ export class BookshelfSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.autoUpdateTimestamp)
 				.onChange(async (value) => {
 					this.plugin.settings.autoUpdateTimestamp = value;
+					await this.plugin.saveSettings();
+					// Re-register event listener
+					if (value) {
+						this.plugin.registerAutoUpdateTimestamp();
+					}
+				}));
+
+		new Setting(containerEl)
+			.setName('Auto status change')
+			.setDesc('Automatically change status to "finished" when read_page reaches totalPages')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.autoStatusChange)
+				.onChange(async (value) => {
+					this.plugin.settings.autoStatusChange = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Show progress notification')
+			.setDesc('Show notification when progress is updated')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.showProgressNotification)
+				.onChange(async (value) => {
+					this.plugin.settings.showProgressNotification = value;
+					await this.plugin.saveSettings();
+				}));
+
+		// Reading history settings
+		containerEl.createEl('h3', { text: 'Reading History' });
+
+		new Setting(containerEl)
+			.setName('Track reading history')
+			.setDesc('Whether to track reading history (pages read per session)')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.trackReadingHistory)
+				.onChange(async (value) => {
+					this.plugin.settings.trackReadingHistory = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Require reading notes')
+			.setDesc('Require notes when updating reading progress')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.requireReadingNotes)
+				.onChange(async (value) => {
+					this.plugin.settings.requireReadingNotes = value;
+					await this.plugin.saveSettings();
+				}));
+
+		// Bookshelf View settings
+		containerEl.createEl('h3', { text: 'Bookshelf View' });
+
+		new Setting(containerEl)
+			.setName('Default layout')
+			.setDesc('Default layout for Bookshelf View')
+			.addDropdown(dropdown => dropdown
+				.addOption('grid', 'Grid')
+				.addOption('list', 'List')
+				.setValue(this.plugin.settings.viewLayout)
+				.onChange(async (value) => {
+					this.plugin.settings.viewLayout = value as 'grid' | 'list';
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Default sort')
+			.setDesc('Default sort order for Bookshelf View')
+			.addDropdown(dropdown => dropdown
+				.addOption('date', 'Date')
+				.addOption('title', 'Title')
+				.addOption('author', 'Author')
+				.addOption('progress', 'Progress')
+				.setValue(this.plugin.settings.defaultSort)
+				.onChange(async (value) => {
+					this.plugin.settings.defaultSort = value as 'date' | 'title' | 'author' | 'progress';
 					await this.plugin.saveSettings();
 				}));
 

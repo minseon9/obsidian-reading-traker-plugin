@@ -106,7 +106,7 @@ export class SearchModal extends Modal {
 	 */
 	private async performSearch(query: string) {
 		try {
-			const limit = 20; // Default limit, can be made configurable
+			const limit = this.plugin.settings.searchResultLimit || 20;
 			const results = await this.openLibraryClient.searchBooks(query, limit);
 			this.currentResults = results;
 			this.renderResults(results);

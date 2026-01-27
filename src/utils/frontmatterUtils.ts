@@ -241,31 +241,37 @@ export class FrontmatterProcessor {
 		content: string,
 		page: number,
 		totalPages?: number,
-		notes?: string
+		notes?: string,
+		autoStatusChange: boolean = true
 	): string {
 		const { frontmatter, body } = this.extractFrontmatter(content);
 		
 		// Update read_page
 		frontmatter.read_page = page;
 
-		// Update status based on progress
-		if (totalPages && page >= totalPages) {
-			frontmatter.status = 'finished';
-			if (!frontmatter.read_finished) {
-				frontmatter.read_finished = getCurrentDateTime();
-			}
-		} else if (page > 0 && frontmatter.status === 'unread') {
-			frontmatter.status = 'reading';
-			if (!frontmatter.read_started) {
-				frontmatter.read_started = getCurrentDateTime();
+		// Update status based on progress (if autoStatusChange is enabled)
+		if (autoStatusChange) {
+			if (totalPages && page >= totalPages) {
+				frontmatter.status = 'finished';
+				if (!frontmatter.read_finished) {
+					frontmatter.read_finished = getCurrentDateTime();
+				}
+			} else if (page > 0 && frontmatter.status === 'unread') {
+				frontmatter.status = 'reading';
+				if (!frontmatter.read_started) {
+					frontmatter.read_started = getCurrentDateTime();
+				}
 			}
 		}
 
 		// Update timestamp
 		frontmatter.updated = getCurrentDateTime();
 
-		// Add reading history entry if notes provided or if we want to track history
-		if (notes || true) { // Always track history for now
+		// Add reading history entry if tracking is enabled
+		// Note: trackReadingHistory parameter would need to be passed from plugin settings
+		// For now, always track if notes are provided or if we want to track
+		const shouldTrackHistory = true; // Will be controlled by settings in the future
+		if (shouldTrackHistory) {
 			if (!frontmatter.reading_history) {
 				frontmatter.reading_history = [];
 			}

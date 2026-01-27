@@ -15,6 +15,15 @@ export class BookshelfView extends ItemView {
 	private currentSort: 'date' | 'title' | 'author' | 'progress' = 'date';
 	private layout: 'grid' | 'list' = 'grid';
 
+	async onOpen() {
+		// Load settings for default layout and sort
+		this.layout = this.plugin.settings.viewLayout || 'grid';
+		this.currentSort = this.plugin.settings.defaultSort || 'date';
+		
+		await this.loadBooks();
+		this.render();
+	}
+
 	constructor(leaf: any, plugin: BookshelfPlugin) {
 		super(leaf);
 		this.plugin = plugin;
@@ -31,11 +40,6 @@ export class BookshelfView extends ItemView {
 
 	getIcon(): string {
 		return 'book-open';
-	}
-
-	async onOpen() {
-		await this.loadBooks();
-		this.render();
 	}
 
 	async onClose() {
