@@ -1,4 +1,5 @@
 import { Book, createBookFromData } from '../models/book';
+import { HttpClient } from '../utils/httpClient';
 import {
 	OpenLibrarySearchResponse,
 	OpenLibrarySearchDoc,
@@ -11,33 +12,10 @@ import {
  */
 export class OpenLibraryClient {
 	private baseUrl = 'https://openlibrary.org';
-	private timeout: number;
+	private httpClient: HttpClient;
 
 	constructor(timeout: number = 5000) {
-		this.timeout = timeout;
-	}
-
-	/**
-	 * Make HTTP request with timeout
-	 */
-	private async fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
-		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-		try {
-			const response = await fetch(url, {
-				...options,
-				signal: controller.signal,
-			});
-			clearTimeout(timeoutId);
-			return response;
-		} catch (error) {
-			clearTimeout(timeoutId);
-			if (error instanceof Error && error.name === 'AbortError') {
-				throw new Error(`Request timeout after ${this.timeout}ms`);
-			}
-			throw error;
-		}
+		this.httpClient = new HttpClient(timeout);
 	}
 
 	/**
@@ -51,12 +29,7 @@ export class OpenLibraryClient {
 			const encodedQuery = encodeURIComponent(query);
 			const url = `${this.baseUrl}/search.json?q=${encodedQuery}&limit=${limit}`;
 
-			const response = await this.fetchWithTimeout(url);
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-
-			const data: OpenLibrarySearchResponse = await response.json();
+			const data = await this.httpClient.get<OpenLibrarySearchResponse>(url);
 			return this.convertSearchDocsToBooks(data.docs);
 		} catch (error) {
 			if (error instanceof Error) {
@@ -74,13 +47,7 @@ export class OpenLibraryClient {
 	async getBookDetails(workKey: string): Promise<Book> {
 		try {
 			const url = `${this.baseUrl}${workKey}.json`;
-			const response = await this.fetchWithTimeout(url);
-
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-
-			const work: OpenLibraryWork = await response.json();
+			const work = await this.httpClient.get<OpenLibraryWork>(url);
 
 			// Get edition details if available
 			let edition: OpenLibraryEdition | null = null;
@@ -88,12 +55,9 @@ export class OpenLibraryClient {
 				// Try to get the first edition
 				const editionsUrl = `${this.baseUrl}${work.key}/editions.json`;
 				try {
-					const editionsResponse = await this.fetchWithTimeout(editionsUrl);
-					if (editionsResponse.ok) {
-						const editionsData = await editionsResponse.json();
-						if (editionsData.entries && editionsData.entries.length > 0) {
-							edition = editionsData.entries[0];
-						}
+					const editionsData = await this.httpClient.get<{ entries: OpenLibraryEdition[] }>(editionsUrl);
+					if (editionsData.entries && editionsData.entries.length > 0 && editionsData.entries[0]) {
+						edition = editionsData.entries[0];
 					}
 				} catch (e) {
 					// Ignore edition fetch errors
