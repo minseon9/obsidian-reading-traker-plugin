@@ -46,12 +46,12 @@ export class HttpClient {
 	 * @throws Error if request fails or response is not valid JSON
 	 */
 	async get<T>(url: string, options: RequestInit = {}): Promise<T> {
-		try {
-			const response = await this.fetch(url, {
-				...options,
-				method: 'GET',
-			});
+		const response = await this.fetch(url, {
+			...options,
+			method: 'GET',
+		});
 
+		try {
 			return await response.json();
 		} catch (error) {
 			throw new Error(`Request failed. Please try again later.`);

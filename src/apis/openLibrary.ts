@@ -47,20 +47,8 @@ export class OpenLibraryClient {
 			const url = `${this.baseUrl}${workKey}.json`;
 			const work = await this.httpClient.get<OpenLibraryWork>(url);
 
-			// Get edition details if available
-			let edition: OpenLibraryEdition | null = null;
-			if (work.key) {
-				// Try to get the first edition (ignore errors)
-				const editionsUrl = `${this.baseUrl}${work.key}/editions.json`;
-				try {
-					const editionsData = await this.httpClient.get<OpenLibraryEditionsResponse>(editionsUrl);
-					if (editionsData.entries && editionsData.entries.length > 0 && editionsData.entries[0]) {
-						edition = editionsData.entries[0];
-					}
-				} catch (e) {
-					// Ignore edition fetch errors - work data is sufficient
-				}
-			}
+			// Get edition details if available (optional, failures are ignored)
+			const edition = await this.getFirstEdition(work.key);
 
 			return this.convertWorkToBook(work, edition);
 		} catch (error) {
@@ -88,6 +76,29 @@ export class OpenLibraryClient {
 
 		// If coverId is a string (ISBN), use ISBN
 		return `https://covers.openlibrary.org/b/isbn/${coverId}${sizeMap[size]}.jpg`;
+	}
+
+	/**
+	 * Get first edition for a work (optional, returns null on failure)
+	 * @param workKey Work key
+	 * @returns First edition or null if not available
+	 */
+	private async getFirstEdition(workKey: string | undefined): Promise<OpenLibraryEdition | null> {
+		if (!workKey) {
+			return null;
+		}
+
+		try {
+			const editionsUrl = `${this.baseUrl}${workKey}/editions.json`;
+			const editionsData = await this.httpClient.get<OpenLibraryEditionsResponse>(editionsUrl);
+			if (editionsData.entries && editionsData.entries.length > 0 && editionsData.entries[0]) {
+				return editionsData.entries[0];
+			}
+		} catch (e) {
+			// Ignore edition fetch errors - work data is sufficient
+		}
+
+		return null;
 	}
 
 	/**
@@ -154,10 +165,6 @@ export class OpenLibraryClient {
 		} else if (isbn10) {
 			coverUrl = this.getBookCover(isbn10, 'M');
 		}
-
-		const description = typeof work.description === 'string'
-			? work.description
-			: work.description?.value;
 
 		return createBookFromData({
 			title: work.title,
