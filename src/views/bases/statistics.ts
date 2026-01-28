@@ -392,12 +392,6 @@ export class StatisticsBasesView extends BasesViewBase {
 	}
 
 	private renderCategoryBreakdown(container: HTMLElement, doc: Document): void {
-		const categories = Object.entries(this.stats!.categoryCounts)
-			.sort((a, b) => b[1] - a[1])
-			.slice(0, 10);
-
-		if (categories.length === 0) return;
-
 		const section = doc.createElement('div');
 		section.style.cssText = 'margin-bottom: 24px; padding: 16px; background: var(--background-secondary); border-radius: 8px;';
 
@@ -405,29 +399,72 @@ export class StatisticsBasesView extends BasesViewBase {
 		title.textContent = 'Books by category';
 		title.style.cssText = 'margin: 0 0 16px 0; font-size: 1.2em;';
 
-		// Bar chart
-		const barChartContainer = doc.createElement('div');
-		barChartContainer.style.cssText = 'margin-bottom: 16px; height: 300px; position: relative;';
-		this.renderBarChart(barChartContainer, doc, categories.map(([category, count]) => ({
-			label: category,
-			value: count,
-		})));
+		const categories = Object.entries(this.stats!.categoryCounts)
+			.sort((a, b) => b[1] - a[1])
+			.slice(0, 10);
 
-		section.appendChild(title);
-		section.appendChild(barChartContainer);
+		if (categories.length === 0) {
+			// Empty state
+			const emptyState = doc.createElement('div');
+			emptyState.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-muted);';
+			
+			const emptyIcon = doc.createElement('div');
+			emptyIcon.textContent = '??';
+			emptyIcon.style.cssText = 'font-size: 48px; margin-bottom: 16px; opacity: 0.5;';
+			
+			const emptyText = doc.createElement('div');
+			emptyText.textContent = 'No category data available';
+			emptyText.style.cssText = 'font-size: 14px;';
+			
+			emptyState.appendChild(emptyIcon);
+			emptyState.appendChild(emptyText);
+			section.appendChild(title);
+			section.appendChild(emptyState);
+		} else {
+			// Bar chart
+			const barChartContainer = doc.createElement('div');
+			barChartContainer.style.cssText = 'margin-bottom: 16px; height: 300px; position: relative;';
+			this.renderBarChart(barChartContainer, doc, categories.map(([category, count]) => ({
+				label: category,
+				value: count,
+			})));
+
+			section.appendChild(title);
+			section.appendChild(barChartContainer);
+		}
+
 		container.appendChild(section);
 	}
 
 	private renderYearlyStats(container: HTMLElement, doc: Document): void {
-		const years = Object.keys(this.stats!.yearlyStats).sort().reverse();
-		if (years.length === 0) return;
-
 		const section = doc.createElement('div');
 		section.style.cssText = 'margin-bottom: 24px; padding: 16px; background: var(--background-secondary); border-radius: 8px;';
 
 		const title = doc.createElement('h2');
 		title.textContent = 'Books finished by year';
 		title.style.cssText = 'margin: 0 0 16px 0; font-size: 1.2em;';
+
+		const years = Object.keys(this.stats!.yearlyStats).sort().reverse();
+		if (years.length === 0) {
+			// Empty state
+			const emptyState = doc.createElement('div');
+			emptyState.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-muted);';
+			
+			const emptyIcon = doc.createElement('div');
+			emptyIcon.textContent = '??';
+			emptyIcon.style.cssText = 'font-size: 48px; margin-bottom: 16px; opacity: 0.5;';
+			
+			const emptyText = doc.createElement('div');
+			emptyText.textContent = 'No yearly data available';
+			emptyText.style.cssText = 'font-size: 14px;';
+			
+			emptyState.appendChild(emptyIcon);
+			emptyState.appendChild(emptyText);
+			section.appendChild(title);
+			section.appendChild(emptyState);
+			container.appendChild(section);
+			return;
+		}
 
 		// Chart container with line chart showing variation
 		const chartContainer = doc.createElement('div');
@@ -507,15 +544,34 @@ export class StatisticsBasesView extends BasesViewBase {
 	}
 
 	private renderMonthlyStats(container: HTMLElement, doc: Document): void {
-		const months = Object.keys(this.stats!.monthlyStats).sort().reverse().slice(0, 12);
-		if (months.length === 0) return;
-
 		const section = doc.createElement('div');
 		section.style.cssText = 'margin-bottom: 24px; padding: 16px; background: var(--background-secondary); border-radius: 8px;';
 
 		const title = doc.createElement('h2');
 		title.textContent = 'Books finished by month (Last 12)';
 		title.style.cssText = 'margin: 0 0 16px 0; font-size: 1.2em;';
+
+		const months = Object.keys(this.stats!.monthlyStats).sort().reverse().slice(0, 12);
+		if (months.length === 0) {
+			// Empty state
+			const emptyState = doc.createElement('div');
+			emptyState.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-muted);';
+			
+			const emptyIcon = doc.createElement('div');
+			emptyIcon.textContent = '??';
+			emptyIcon.style.cssText = 'font-size: 48px; margin-bottom: 16px; opacity: 0.5;';
+			
+			const emptyText = doc.createElement('div');
+			emptyText.textContent = 'No monthly data available';
+			emptyText.style.cssText = 'font-size: 14px;';
+			
+			emptyState.appendChild(emptyIcon);
+			emptyState.appendChild(emptyText);
+			section.appendChild(title);
+			section.appendChild(emptyState);
+			container.appendChild(section);
+			return;
+		}
 
 		// Chart container with line chart showing variation
 		const chartContainer = doc.createElement('div');
