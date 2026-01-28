@@ -1,4 +1,4 @@
-import type { BookshelfSettings } from "../../settings/types";
+import type { BookshelfSettings } from "../../../settings/types";
 
 export class StatisticsBaseFileGenerator {
 	static generate(settings: BookshelfSettings): string {

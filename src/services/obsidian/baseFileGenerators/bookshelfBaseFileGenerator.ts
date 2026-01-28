@@ -1,4 +1,4 @@
-import type { BookshelfSettings } from "../../settings/types";
+import type { BookshelfSettings } from "../../../settings/types";
 
 export class BookshelfBaseFileGenerator {
 	static generate(settings: BookshelfSettings): string {

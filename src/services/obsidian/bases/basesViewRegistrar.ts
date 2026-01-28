@@ -1,11 +1,11 @@
 /* eslint-disable no-console */
-import BookshelfPlugin from "../main";
+import BookshelfPlugin from "../../../main";
 import {requireApiVersion} from "obsidian";
 import {registerBasesView, unregisterBasesView} from "./basesPluginClient";
-import { BookshelfBasesView } from "../views/bases/bookshelf";
-import { ReadingBasesView } from "../views/bases/reading";
-import { LibraryBasesView } from "../views/bases/library";
-import { StatisticsBasesView } from "../views/bases/statistics";
+import { BookshelfBasesView } from "../../../views/bases/bookshelf";
+import { ReadingBasesView } from "../../../views/bases/reading";
+import { LibraryBasesView } from "../../../views/bases/library";
+import { StatisticsBasesView } from "../../../views/bases/statistics";
 
 /**
  * Register Bookshelf views with Bases plugin

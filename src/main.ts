@@ -10,10 +10,10 @@ import { BookshelfView } from "./views/bookshelfView";
 import { SearchModal } from "./views/bookSearchModal";
 import { ProgressUpdateModal } from "./views/progressUpdateModal";
 import { getCurrentDateTime } from "./utils/dateUtils";
-import { registerBasesBookshelfView, unregisterBasesViews } from "./obsidian_bases/basesViewRegistrar";
-import { BookshelfBaseFileGenerator } from "./obsidian_bases/generators/bookshelfBaseFileGenerator";
-import { LibraryBaseFileGenerator } from "./obsidian_bases/generators/libraryBaseFileGenerator";
-import { StatisticsBaseFileGenerator } from "./obsidian_bases/generators/statisticsBaseFileGenerator";
+import { registerBasesBookshelfView, unregisterBasesViews } from "./services/obsidian/bases/basesViewRegistrar";
+import { BookshelfBaseFileGenerator } from "./services/obsidian/baseFileGenerators/bookshelfBaseFileGenerator";
+import { LibraryBaseFileGenerator } from "./services/obsidian/baseFileGenerators/libraryBaseFileGenerator";
+import { StatisticsBaseFileGenerator } from "./services/obsidian/baseFileGenerators/statisticsBaseFileGenerator";
 
 export default class BookshelfPlugin extends Plugin {
 	settings: BookshelfSettings;
