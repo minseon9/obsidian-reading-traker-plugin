@@ -1,8 +1,25 @@
 import { TFile } from 'obsidian';
 import { Book } from '../../models/book';
 import { BasesViewBase } from './base';
-import { BookStatistics } from './bookStatistics';
 import BookshelfPlugin from '../../main';
+
+/**
+ * Book statistics interface
+ * Note: This is a view-specific aggregation interface, not a domain model
+ */
+interface BookStatistics {
+	totalBooks: number;
+	reading: number;
+	unread: number;
+	finished: number;
+	totalPages: number;
+	readPages: number;
+	averageTimeToFinish: number;
+	categoryCounts: Record<string, number>;
+	yearlyStats: Record<string, { count: number; pages: number; readingDays: number; change?: number; changePercent?: number }>;
+	monthlyStats: Record<string, { count: number; pages: number; readingDays: number; change?: number; changePercent?: number }>;
+	readingDays: number;
+}
 
 /**
  * Statistics View - Displays reading statistics and graphs
@@ -13,7 +30,7 @@ export class StatisticsBasesView extends BasesViewBase {
 	private books: Array<{ book: Book; file: TFile }> = [];
 	private stats: BookStatistics | null = null;
 
-	constructor(controller: any, containerEl: HTMLElement, plugin: BookshelfPlugin) {
+	constructor(controller: unknown, containerEl: HTMLElement, plugin: BookshelfPlugin) {
 		super(controller, containerEl, plugin);
 	}
 
@@ -78,7 +95,7 @@ export class StatisticsBasesView extends BasesViewBase {
 				const month = `${year}-${String(finishedDate.getMonth() + 1).padStart(2, '0')}`;
 
 				if (!stats.yearlyStats[year]) {
-					stats.yearlyStats[year] = { count: 0, pages: 0 };
+					stats.yearlyStats[year] = { count: 0, pages: 0, readingDays: 0 };
 				}
 				stats.yearlyStats[year].count++;
 				if (book.totalPages) {
@@ -86,12 +103,42 @@ export class StatisticsBasesView extends BasesViewBase {
 				}
 
 				if (!stats.monthlyStats[month]) {
-					stats.monthlyStats[month] = { count: 0, pages: 0 };
+					stats.monthlyStats[month] = { count: 0, pages: 0, readingDays: 0 };
 				}
 				stats.monthlyStats[month].count++;
 				if (book.totalPages) {
 					stats.monthlyStats[month].pages += book.totalPages;
 				}
+
+				// Calculate reading days for this book
+				const bookReadingDaysSet = new Set<string>();
+				if (book.readStarted) {
+					const startDate = new Date(book.readStarted);
+					const startDateStr = startDate.toISOString().split('T')[0];
+					if (startDateStr) bookReadingDaysSet.add(startDateStr);
+				}
+
+				// Get reading history summary for this book
+				try {
+					const content = await this.plugin.app.vault.read(file);
+					const { FrontmatterParser } = await import('../../services/frontmatterService/frontmatterParser');
+					const { frontmatter } = FrontmatterParser.extract(content);
+					
+					const historySummary = frontmatter.reading_history_summary;
+					if (historySummary && Array.isArray(historySummary)) {
+						historySummary.forEach((record: unknown) => {
+							if (record && typeof record === 'object' && 'date' in record && typeof record.date === 'string') {
+								bookReadingDaysSet.add(record.date);
+							}
+						});
+					}
+				} catch (e) {
+					// Ignore errors
+				}
+
+				const bookReadingDays = bookReadingDaysSet.size;
+				stats.yearlyStats[year].readingDays += bookReadingDays;
+				stats.monthlyStats[month].readingDays += bookReadingDays;
 			}
 
 			// Reading days calculation: only days with update progress (from reading_history_summary)
@@ -113,8 +160,8 @@ export class StatisticsBasesView extends BasesViewBase {
 					
 					const historySummary = frontmatter.reading_history_summary;
 					if (historySummary && Array.isArray(historySummary)) {
-						historySummary.forEach((record: any) => {
-							if (record.date) {
+						historySummary.forEach((record: unknown) => {
+							if (record && typeof record === 'object' && 'date' in record && typeof record.date === 'string') {
 								readingDaysSet.add(record.date);
 							}
 						});
@@ -163,20 +210,52 @@ export class StatisticsBasesView extends BasesViewBase {
 			}
 		}
 
-		// Average time to finish
+		// Average days to finish (based on number of update sessions)
 		if (finishedBooks.length > 0) {
-			let totalDays = 0;
+			let totalUpdateDays = 0;
 			let count = 0;
-			for (const book of finishedBooks) {
-				if (book.readStarted && book.readFinished) {
-					const start = new Date(book.readStarted);
-					const end = new Date(book.readFinished);
-					const days = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
-					totalDays += days;
-					count++;
+			
+			for (const bookItem of this.books) {
+				if (bookItem.book.status !== 'finished') continue;
+				
+				try {
+					const content = await this.plugin.app.vault.read(bookItem.file);
+					const { FrontmatterParser } = await import('../../services/frontmatterService/frontmatterParser');
+					const { frontmatter } = FrontmatterParser.extract(content);
+					
+					// Count unique update days from reading_history_summary
+					const historySummary = frontmatter.reading_history_summary;
+					const updateDaysSet = new Set<string>();
+					
+					// Add start day
+					if (bookItem.book.readStarted) {
+						const startDate = new Date(bookItem.book.readStarted);
+						const startDateStr = startDate.toISOString().split('T')[0];
+						if (startDateStr) {
+							updateDaysSet.add(startDateStr);
+						}
+					}
+					
+					// Add update days from history
+					if (historySummary && Array.isArray(historySummary)) {
+						historySummary.forEach((record: unknown) => {
+							if (record && typeof record === 'object' && 'date' in record && typeof record.date === 'string') {
+								updateDaysSet.add(record.date);
+							}
+						});
+					}
+					
+					const updateDays = updateDaysSet.size;
+					if (updateDays > 0) {
+						totalUpdateDays += updateDays;
+						count++;
+					}
+				} catch (e) {
+					// Ignore errors
 				}
 			}
-			stats.averageTimeToFinish = count > 0 ? Math.round(totalDays / count) : 0;
+			
+			stats.averageTimeToFinish = count > 0 ? Math.round(totalUpdateDays / count) : 0;
 		}
 
 		return stats;
@@ -191,27 +270,35 @@ export class StatisticsBasesView extends BasesViewBase {
 
 		// Title
 		const title = doc.createElement('h1');
-		title.textContent = 'Reading Statistics';
+		title.textContent = 'Reading statistics';
 		title.style.cssText = 'margin: 0 0 24px 0; font-size: 1.8em;';
 		container.appendChild(title);
 
-		// Overview cards
+		// Overview cards (full width)
 		this.renderOverviewCards(container, doc);
 
-		// Average time to finish
-		this.renderAverageTime(container, doc);
+		// Grid row 1: Total statistics (2 columns)
+		const gridRow1 = doc.createElement('div');
+		gridRow1.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px;';
+		
+		const avgTimeContainer = doc.createElement('div');
+		this.renderAverageTime(avgTimeContainer, doc);
+		gridRow1.appendChild(avgTimeContainer);
 
-		// Category breakdown
+		const readingDaysContainer = doc.createElement('div');
+		this.renderReadingDays(readingDaysContainer, doc);
+		gridRow1.appendChild(readingDaysContainer);
+
+		container.appendChild(gridRow1);
+
+		// Category breakdown (full width)
 		this.renderCategoryBreakdown(container, doc);
 
-		// Yearly statistics
+		// Yearly statistics (full width)
 		this.renderYearlyStats(container, doc);
 
-		// Monthly statistics
+		// Monthly statistics (full width)
 		this.renderMonthlyStats(container, doc);
-
-		// Reading days
-		this.renderReadingDays(container, doc);
 
 		this.rootElement.appendChild(container);
 	}
@@ -251,19 +338,24 @@ export class StatisticsBasesView extends BasesViewBase {
 
 	private renderAverageTime(container: HTMLElement, doc: Document): void {
 		const section = doc.createElement('div');
-		section.style.cssText = 'margin-bottom: 24px; padding: 16px; background: var(--background-secondary); border-radius: 8px;';
+		section.style.cssText = 'padding: 16px; background: var(--background-secondary); border-radius: 8px; height: 100%;';
 
 		const title = doc.createElement('h2');
-		title.textContent = 'Average Time to Finish';
-		title.style.cssText = 'margin: 0 0 12px 0; font-size: 1.2em;';
+		title.textContent = 'Average days to finish';
+		title.style.cssText = 'margin: 0 0 8px 0; font-size: 1.2em;';
+
+		const description = doc.createElement('div');
+		description.textContent = 'Average number of reading sessions to complete a book';
+		description.style.cssText = 'font-size: 11px; color: var(--text-muted); margin-bottom: 12px;';
 
 		const value = doc.createElement('div');
 		value.textContent = this.stats!.averageTimeToFinish > 0 
-			? `${this.stats!.averageTimeToFinish} days`
+			? `${this.stats!.averageTimeToFinish} sessions`
 			: 'No data available';
 		value.style.cssText = 'font-size: 32px; font-weight: 600; color: var(--interactive-accent);';
 
 		section.appendChild(title);
+		section.appendChild(description);
 		section.appendChild(value);
 		container.appendChild(section);
 	}
@@ -279,29 +371,19 @@ export class StatisticsBasesView extends BasesViewBase {
 		section.style.cssText = 'margin-bottom: 24px; padding: 16px; background: var(--background-secondary); border-radius: 8px;';
 
 		const title = doc.createElement('h2');
-		title.textContent = 'Books by Category';
+		title.textContent = 'Books by category';
 		title.style.cssText = 'margin: 0 0 16px 0; font-size: 1.2em;';
 
-		const list = doc.createElement('div');
-		categories.forEach(([category, count]) => {
-			const item = doc.createElement('div');
-			item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--background-modifier-border);';
-
-			const label = doc.createElement('span');
-			label.textContent = category;
-			label.style.cssText = 'font-size: 14px;';
-
-			const value = doc.createElement('span');
-			value.textContent = count.toString();
-			value.style.cssText = 'font-weight: 600; color: var(--interactive-accent);';
-
-			item.appendChild(label);
-			item.appendChild(value);
-			list.appendChild(item);
-		});
+		// Bar chart
+		const barChartContainer = doc.createElement('div');
+		barChartContainer.style.cssText = 'margin-bottom: 16px; height: 300px; position: relative;';
+		this.renderBarChart(barChartContainer, doc, categories.map(([category, count]) => ({
+			label: category,
+			value: count,
+		})));
 
 		section.appendChild(title);
-		section.appendChild(list);
+		section.appendChild(barChartContainer);
 		container.appendChild(section);
 	}
 
@@ -313,7 +395,7 @@ export class StatisticsBasesView extends BasesViewBase {
 		section.style.cssText = 'margin-bottom: 24px; padding: 16px; background: var(--background-secondary); border-radius: 8px;';
 
 		const title = doc.createElement('h2');
-		title.textContent = 'Books Finished by Year';
+		title.textContent = 'Books finished by year';
 		title.style.cssText = 'margin: 0 0 16px 0; font-size: 1.2em;';
 
 		// Chart container with line chart showing variation
@@ -354,6 +436,7 @@ export class StatisticsBasesView extends BasesViewBase {
 			const label = doc.createElement('span');
 			label.textContent = year;
 			label.style.cssText = 'font-size: 14px; font-weight: 600;';
+			leftContainer.appendChild(label);
 
 			// Show change if available
 			if (stat.change !== undefined && stat.changePercent !== undefined) {
@@ -366,12 +449,22 @@ export class StatisticsBasesView extends BasesViewBase {
 				leftContainer.appendChild(changeEl);
 			}
 
-			const value = doc.createElement('span');
-			value.textContent = `${stat.count} books, ${stat.pages.toLocaleString()} pages`;
-			value.style.cssText = 'font-size: 14px; color: var(--text-muted);';
+			const rightContainer = doc.createElement('div');
+			rightContainer.style.cssText = 'display: flex; flex-direction: column; gap: 2px; align-items: flex-end;';
+
+			const booksPages = doc.createElement('span');
+			booksPages.textContent = `${stat.count} books, ${stat.pages.toLocaleString()} pages`;
+			booksPages.style.cssText = 'font-size: 14px; color: var(--text-muted);';
+
+			const readingDaysSpan = doc.createElement('span');
+			readingDaysSpan.textContent = `${stat.readingDays} reading days`;
+			readingDaysSpan.style.cssText = 'font-size: 11px; color: var(--text-faint);';
+
+			rightContainer.appendChild(booksPages);
+			rightContainer.appendChild(readingDaysSpan);
 
 			item.appendChild(leftContainer);
-			item.appendChild(value);
+			item.appendChild(rightContainer);
 			list.appendChild(item);
 		});
 
@@ -390,7 +483,7 @@ export class StatisticsBasesView extends BasesViewBase {
 		section.style.cssText = 'margin-bottom: 24px; padding: 16px; background: var(--background-secondary); border-radius: 8px;';
 
 		const title = doc.createElement('h2');
-		title.textContent = 'Books Finished by Month (Last 12)';
+		title.textContent = 'Books finished by month (Last 12)';
 		title.style.cssText = 'margin: 0 0 16px 0; font-size: 1.2em;';
 
 		// Chart container with line chart showing variation
@@ -448,6 +541,7 @@ export class StatisticsBasesView extends BasesViewBase {
 			const label = doc.createElement('span');
 			label.textContent = monthLabel;
 			label.style.cssText = 'font-size: 14px; font-weight: 600;';
+			leftContainer.appendChild(label);
 
 			// Show change if available
 			if (stat.change !== undefined && stat.changePercent !== undefined) {
@@ -460,12 +554,22 @@ export class StatisticsBasesView extends BasesViewBase {
 				leftContainer.appendChild(changeEl);
 			}
 
-			const value = doc.createElement('span');
-			value.textContent = `${stat.count} books, ${stat.pages.toLocaleString()} pages`;
-			value.style.cssText = 'font-size: 14px; color: var(--text-muted);';
+			const rightContainer = doc.createElement('div');
+			rightContainer.style.cssText = 'display: flex; flex-direction: column; gap: 2px; align-items: flex-end;';
+
+			const booksPages = doc.createElement('span');
+			booksPages.textContent = `${stat.count} books, ${stat.pages.toLocaleString()} pages`;
+			booksPages.style.cssText = 'font-size: 14px; color: var(--text-muted);';
+
+			const readingDaysSpan = doc.createElement('span');
+			readingDaysSpan.textContent = `${stat.readingDays} reading days`;
+			readingDaysSpan.style.cssText = 'font-size: 11px; color: var(--text-faint);';
+
+			rightContainer.appendChild(booksPages);
+			rightContainer.appendChild(readingDaysSpan);
 
 			item.appendChild(leftContainer);
-			item.appendChild(value);
+			item.appendChild(rightContainer);
 			list.appendChild(item);
 		});
 
@@ -663,17 +767,22 @@ export class StatisticsBasesView extends BasesViewBase {
 
 	private renderReadingDays(container: HTMLElement, doc: Document): void {
 		const section = doc.createElement('div');
-		section.style.cssText = 'margin-bottom: 24px; padding: 16px; background: var(--background-secondary); border-radius: 8px;';
+		section.style.cssText = 'padding: 16px; background: var(--background-secondary); border-radius: 8px; height: 100%;';
 
 		const title = doc.createElement('h2');
-		title.textContent = 'Reading Days';
-		title.style.cssText = 'margin: 0 0 12px 0; font-size: 1.2em;';
+		title.textContent = 'Total reading days';
+		title.style.cssText = 'margin: 0 0 8px 0; font-size: 1.2em;';
+
+		const description = doc.createElement('div');
+		description.textContent = 'Total unique days with reading activity';
+		description.style.cssText = 'font-size: 11px; color: var(--text-muted); margin-bottom: 12px;';
 
 		const value = doc.createElement('div');
 		value.textContent = `${this.stats!.readingDays} days`;
 		value.style.cssText = 'font-size: 32px; font-weight: 600; color: var(--interactive-accent);';
 
 		section.appendChild(title);
+		section.appendChild(description);
 		section.appendChild(value);
 		container.appendChild(section);
 	}

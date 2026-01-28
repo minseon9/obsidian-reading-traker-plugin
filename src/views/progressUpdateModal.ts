@@ -283,11 +283,11 @@ export class ProgressUpdateModal extends Modal {
 		const existing = this.contentEl.querySelector('.bookshelf-progress-success');
 		if (existing) existing.remove();
 
-		// Create simple success message with Obsidian accent color
+		// Create simple success message with Obsidian accent color at the bottom
 		const messageContainer = this.contentEl.createEl('div', {
 			cls: 'bookshelf-progress-success',
 		});
-		messageContainer.style.cssText = 'padding: 8px 12px; margin-top: 16px; background-color: var(--interactive-accent); color: var(--text-on-accent); border-radius: 4px; font-size: 13px; text-align: center;';
+		messageContainer.style.cssText = 'padding: 12px; margin-top: 16px; background-color: transparent; color: var(--interactive-accent); font-size: 14px; text-align: center; font-weight: 500;';
 
 		const text = messageContainer.createEl('span', {
 			text: message,

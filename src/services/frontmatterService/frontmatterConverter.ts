@@ -14,8 +14,8 @@ export class FrontmatterConverter {
 			status: book.status,
 			created: book.created,
 			updated: book.updated,
-			read_started: book.readStarted,
-			read_finished: book.readFinished,
+			read_started: book.readStarted || '',
+			read_finished: book.readFinished || '',
 			read_page: book.readPage || 0,
 		};
 

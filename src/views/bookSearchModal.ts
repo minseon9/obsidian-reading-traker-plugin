@@ -361,20 +361,17 @@ export class SearchModal extends Modal {
 	}
 
 	private showSuccess(message: string) {
-		const existing = this.contentEl.querySelector('.bookshelf-message');
+		const existing = this.contentEl.querySelector('.bookshelf-message-success');
 		if (existing) existing.remove();
 
+		// Create simple success message with Obsidian accent color at the bottom
 		const messageContainer = this.contentEl.createEl('div', {
-			cls: 'bookshelf-message bookshelf-message-success',
+			cls: 'bookshelf-message-success',
 		});
+		messageContainer.style.cssText = 'padding: 12px; margin-top: 16px; background-color: transparent; color: var(--interactive-accent); font-size: 14px; text-align: center; font-weight: 500;';
 
-		messageContainer.createEl('div', { cls: 'bookshelf-message-icon', text: '?' });
-		messageContainer.createEl('div', { cls: 'bookshelf-message-text', text: message });
-
-		const closeButton = messageContainer.createEl('button', {
-			cls: 'bookshelf-message-close',
-			text: 'Close',
+		messageContainer.createEl('span', {
+			text: message,
 		});
-		closeButton.addEventListener('click', () => messageContainer.remove());
 	}
 }

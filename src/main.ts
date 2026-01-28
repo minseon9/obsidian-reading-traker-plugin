@@ -130,16 +130,20 @@ export default class BookshelfPlugin extends Plugin {
 				return;
 			}
 
-			// Add button
-			const button = actionContainer.createEl('button', {
-				cls: 'bookshelf-progress-button mod-cta',
-				text: 'Update Progress',
-			});
+		// Add button
+		const button = actionContainer.createEl('button', {
+			cls: 'bookshelf-progress-button mod-cta',
+			text: 'Update Progress',
+		});
 
-			button.addEventListener('click', () => {
-				const modal = new ProgressUpdateModal(this.app, this, file);
+		button.addEventListener('click', () => {
+			// Get the currently active file to ensure we're updating the correct one
+			const activeFile = this.app.workspace.getActiveFile();
+			if (activeFile) {
+				const modal = new ProgressUpdateModal(this.app, this, activeFile);
 				modal.open();
-			});
+			}
+		});
 		}, 200);
 	}
 
