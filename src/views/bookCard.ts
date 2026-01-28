@@ -126,10 +126,11 @@ export class BookCard {
 			lastReadValue.style.cssText = 'font-weight: 400; color: var(--text-muted); font-size: 12px; font-style: italic;';
 		}
 
-		// Progress section (enhanced)
-		if (this.book.totalPages && this.book.readPage !== undefined) {
-			const progress = Math.min((this.book.readPage / this.book.totalPages) * 100, 100);
-			const remainingPages = this.book.totalPages - this.book.readPage;
+		// Progress section (enhanced) - always show if totalPages is available
+		if (this.book.totalPages !== undefined && this.book.totalPages !== null && this.book.totalPages > 0) {
+			const currentPage = this.book.readPage || 0;
+			const progress = Math.min((currentPage / this.book.totalPages) * 100, 100);
+			const remainingPages = Math.max(0, this.book.totalPages - currentPage);
 			
 			const progressContainer = infoContainer.createEl('div', {
 				cls: 'bookshelf-progress-container',
@@ -166,7 +167,7 @@ export class BookCard {
 			pageDetails.style.cssText = 'display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);';
 			
 			const pagesRead = pageDetails.createEl('span');
-			pagesRead.textContent = `Read: ${this.book.readPage} pages`;
+			pagesRead.textContent = `Read: ${currentPage} pages`;
 			
 			const pagesRemaining = pageDetails.createEl('span');
 			pagesRemaining.textContent = `Remaining: ${remainingPages} pages`;

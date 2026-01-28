@@ -74,6 +74,34 @@ export class FrontmatterProcessor {
 			if (key === 'reading_history') {
 				continue; // Skip old reading_history in frontmatter
 			}
+			
+			// Handle reading_history_summary - ensure it's always an array
+			if (key === 'reading_history_summary') {
+				// If it's an empty string or invalid format, convert to empty array
+				if (value === '' || value === null || (typeof value === 'string' && value.trim() === '')) {
+					frontmatter[key] = [];
+					continue;
+				}
+				// If it's already an array, keep it
+				if (Array.isArray(value)) {
+					frontmatter[key] = value;
+					continue;
+				}
+				// Otherwise, try to parse as array
+				if (typeof value === 'string' && value.startsWith('[') && value.endsWith(']')) {
+					try {
+						frontmatter[key] = JSON.parse(value);
+						continue;
+					} catch (e) {
+						// If parsing fails, use empty array
+						frontmatter[key] = [];
+						continue;
+					}
+				}
+				// Default to empty array if we can't parse it
+				frontmatter[key] = [];
+				continue;
+			}
 
 			// Parse numbers
 			if (/^\d+$/.test(value)) {
@@ -138,16 +166,22 @@ export class FrontmatterProcessor {
 				} else {
 					// Handle reading_history_summary (array of objects for statistics)
 					if (key === 'reading_history_summary' && value.length > 0 && typeof value[0] === 'object' && value[0] !== null && !Array.isArray(value[0])) {
-						lines.push(`${key}:`);
-						for (const item of value) {
-							if (!item || typeof item !== 'object') continue;
-							lines.push(`  - date: "${item.date || ''}"`);
-							lines.push(`    startPage: ${item.startPage ?? 0}`);
-							lines.push(`    endPage: ${item.endPage ?? 0}`);
-							lines.push(`    pagesRead: ${item.pagesRead ?? 0}`);
-							if (item.timestamp) {
-								lines.push(`    timestamp: "${item.timestamp}"`);
+						// Ensure we have a proper array of objects
+						const validItems = value.filter((item: any) => item && typeof item === 'object' && !Array.isArray(item));
+						if (validItems.length > 0) {
+							lines.push(`${key}:`);
+							for (const item of validItems) {
+								lines.push(`  - date: "${item.date || ''}"`);
+								lines.push(`    startPage: ${item.startPage ?? 0}`);
+								lines.push(`    endPage: ${item.endPage ?? 0}`);
+								lines.push(`    pagesRead: ${item.pagesRead ?? 0}`);
+								if (item.timestamp) {
+									lines.push(`    timestamp: "${item.timestamp}"`);
+								}
 							}
+						} else {
+							// If no valid items, use empty array
+							lines.push(`${key}: []`);
 						}
 					} else if (key === 'reading_history') {
 						// Skip old reading_history - it's stored in body now

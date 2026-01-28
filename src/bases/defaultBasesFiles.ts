@@ -45,41 +45,6 @@ views:
 `;
 }
 
-/**
- * Generate Reading view .base file content
- */
-export function generateReadingBaseFile(settings: BookshelfSettings): string {
-	const booksFolder = `${settings.bookFolder}/books`;
-	
-	return `filters:
-  and:
-    - file.path.startsWith("${booksFolder}/")
-    - file.path.endsWith(".md")
-    - note.status == "reading"
-
-order:
-  - note.read_page
-  - file.ctime
-
-columns:
-  - id: file.name
-    display-name: Title
-    type: text
-  - id: note.author
-    display-name: Author
-    type: list
-  - id: note.read_page
-    display-name: Progress
-    type: number
-  - id: note.total
-    display-name: Total Pages
-    type: number
-
-views:
-  - type: bookshelfReadingView
-    name: Reading
-`;
-}
 
 /**
  * Generate Library view .base file content (unread and finished books)

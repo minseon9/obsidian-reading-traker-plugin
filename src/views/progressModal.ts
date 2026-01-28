@@ -202,16 +202,9 @@ export class ProgressUpdateModal extends Modal {
 			// Update calculations initially
 			this.updateCalculations();
 
-			// Buttons
+			// Update button only (no cancel button)
 			const buttonContainer = container.createEl('div', {
 				cls: 'bookshelf-progress-buttons',
-			});
-
-			const cancelButton = buttonContainer.createEl('button', {
-				text: 'Cancel',
-			});
-			cancelButton.addEventListener('click', () => {
-				this.close();
 			});
 
 			const updateButton = buttonContainer.createEl('button', {
@@ -273,18 +266,6 @@ export class ProgressUpdateModal extends Modal {
 				this.plugin.settings.autoStatusChange
 			);
 
-			// Show notification if enabled
-			if (this.plugin.settings.showProgressNotification) {
-				// Refresh Bookshelf View if open
-				const leaves = this.app.workspace.getLeavesOfType('bookshelf-view');
-				leaves.forEach(leaf => {
-					const view = leaf.view as any;
-					if (view && typeof view.refresh === 'function') {
-						view.refresh();
-					}
-				});
-			}
-			
 			// Show success message with better UI
 			this.showSuccessMessage('Progress updated successfully!');
 		} catch (error) {
@@ -293,33 +274,21 @@ export class ProgressUpdateModal extends Modal {
 	}
 
 	/**
-	 * Show success message with nice UI
+	 * Show success message with Obsidian-style UI
 	 */
 	private showSuccessMessage(message: string): void {
 		// Remove any existing messages
-		const existing = this.contentEl.querySelector('.bookshelf-message');
+		const existing = this.contentEl.querySelector('.bookshelf-progress-success');
 		if (existing) existing.remove();
 
+		// Create simple success message with Obsidian accent color
 		const messageContainer = this.contentEl.createEl('div', {
-			cls: 'bookshelf-message bookshelf-message-success',
+			cls: 'bookshelf-progress-success',
 		});
+		messageContainer.style.cssText = 'padding: 8px 12px; margin-top: 16px; background-color: var(--interactive-accent); color: var(--text-on-accent); border-radius: 4px; font-size: 13px; text-align: center;';
 
-		const icon = messageContainer.createEl('div', {
-			cls: 'bookshelf-message-icon',
-			text: '?',
-		});
-
-		const text = messageContainer.createEl('div', {
-			cls: 'bookshelf-message-text',
+		const text = messageContainer.createEl('span', {
 			text: message,
-		});
-
-		const closeButton = messageContainer.createEl('button', {
-			cls: 'bookshelf-message-close',
-			text: 'Close',
-		});
-		closeButton.addEventListener('click', () => {
-			this.close();
 		});
 
 		// Auto-close after 2 seconds
