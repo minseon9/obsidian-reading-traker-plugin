@@ -1,9 +1,26 @@
 import { Component, App, TFile, setIcon } from "obsidian";
 import BookshelfPlugin from "../../main";
-import { BasesDataAdapter } from "./basesDataAdapter";
+import { BasesDataItem } from "./basesDataItem";
 import { Book } from "../../models/book";
 import { BookFileReader } from "../../services/bookFileService/bookFileReader";
 import { BookFileUpdater } from "../../services/bookFileService/bookFileUpdater";
+
+/**
+ * Minimal interface for Bases view configuration
+ */
+interface BasesViewConfig {
+	getSort?: () => unknown;
+	getOrder?: () => string[];
+	getDisplayName?: (propertyId: string) => string;
+}
+
+/**
+ * Minimal interface for Bases query result
+ */
+interface BasesQueryResult {
+	data?: unknown;
+	groupedData?: unknown[];
+}
 
 /**
  * Abstract base class for all Bookshelf Bases views.
@@ -12,10 +29,9 @@ import { BookFileUpdater } from "../../services/bookFileService/bookFileUpdater"
 export abstract class BasesViewBase extends Component {
 	// BasesView properties (provided by Bases when factory returns this instance)
 	app!: App;
-	config!: any; // BasesViewConfig - using any since not exported from public API
-	data!: any; // BasesQueryResult - using any since not exported from public API
+	config!: BasesViewConfig;
+	data!: BasesQueryResult;
 	protected plugin: BookshelfPlugin;
-	protected dataAdapter: BasesDataAdapter;
 	protected containerEl: HTMLElement;
 	protected rootElement: HTMLElement | null = null;
 	protected bookFileReader: BookFileReader;
@@ -23,7 +39,7 @@ export abstract class BasesViewBase extends Component {
 	protected updateDebounceTimer: number | null = null;
 	protected dataUpdateDebounceTimer: number | null = null;
 
-	constructor(controller: any, containerEl: HTMLElement, plugin: BookshelfPlugin) {
+	constructor(controller: unknown, containerEl: HTMLElement, plugin: BookshelfPlugin) {
 		// Call Component constructor
 		super();
 		this.plugin = plugin;
@@ -34,8 +50,6 @@ export abstract class BasesViewBase extends Component {
 
 		// Note: app, config, and data will be set by Bases when it creates the view
 		// We just need to ensure our types match the BasesView interface
-
-		this.dataAdapter = new BasesDataAdapter(this);
 	}
 
 	/**
@@ -296,9 +310,65 @@ export abstract class BasesViewBase extends Component {
 	}
 
 	/**
+	 * Extract all data items from Bases query result.
+	 * Uses public API: this.data.data
+	 *
+	 * NOTE: This only extracts frontmatter and basic file properties (cheap).
+	 * Computed file properties (backlinks, links, etc.) are fetched lazily
+	 * via getComputedProperty() during rendering for visible items only.
+	 */
+	protected extractDataItems(): BasesDataItem[] {
+		if (!this.data?.data) {
+			console.warn("[Bookshelf][BasesView] No data available");
+			return [];
+		}
+		
+		const entries = this.data.data as any[];
+		
+		return entries.map((entry: unknown) => {
+			const e = entry as Record<string, any>;
+			if (!e?.file?.path) {
+				console.warn("[Bookshelf][BasesView] Entry missing file.path:", e);
+				return null;
+			}
+			
+			return {
+				key: e.file.path,
+				data: e,
+				file: e.file,
+				path: e.file.path,
+				properties: this.extractEntryProperties(e),
+				basesData: e,
+			};
+		}).filter((item: BasesDataItem | null): item is BasesDataItem => item !== null);
+	}
+
+	/**
+	 * Extract properties from a Bases entry
+	 */
+	private extractEntryProperties(entry: Record<string, any>): Record<string, any> {
+		const properties: Record<string, any> = {};
+		
+		// Extract note properties (frontmatter)
+		if (entry.note) {
+			Object.assign(properties, entry.note);
+		}
+		
+		// Extract file properties
+		if (entry.file) {
+			properties['file.name'] = entry.file.name;
+			properties['file.path'] = entry.file.path;
+			properties['file.ctime'] = entry.file.ctime;
+			properties['file.mtime'] = entry.file.mtime;
+		}
+		
+		return properties;
+	}
+
+	/**
 	 * Extract books from Bases data items
 	 */
-	protected 	async extractBooksFromBasesData(dataItems: any[]): Promise<Array<{ book: Book; file: TFile }>> {
+	protected 	async extractBooksFromBasesData(dataItems: BasesDataItem[]): Promise<Array<{ book: Book; file: TFile }>> {
 		const books: Array<{ book: Book; file: TFile }> = [];
 
 		for (const item of dataItems) {
@@ -336,7 +406,7 @@ export abstract class BasesViewBase extends Component {
 					const historySummary = frontmatter.reading_history_summary;
 					if (historySummary && Array.isArray(historySummary) && historySummary.length > 0) {
 						// Get most recent record for last read date
-						const sorted = [...historySummary].sort((a: any, b: any) => {
+						const sorted = [...historySummary].sort((a: Record<string, any>, b: Record<string, any>) => {
 							const dateA = a.date || a.timestamp || '';
 							const dateB = b.date || b.timestamp || '';
 							return dateB.localeCompare(dateA);
@@ -349,7 +419,7 @@ export abstract class BasesViewBase extends Component {
 						}
 						
 						// Calculate total pages read from all history records
-						totalPagesReadFromHistory = historySummary.reduce((sum: number, record: any) => {
+						totalPagesReadFromHistory = historySummary.reduce((sum: number, record: Record<string, any>) => {
 							return sum + (record.pagesRead || 0);
 						}, 0);
 					}
@@ -417,7 +487,7 @@ export abstract class BasesViewBase extends Component {
 	/**
 	 * Lifecycle: Save ephemeral state (scroll position, etc).
 	 */
-	getEphemeralState(): any {
+	getEphemeralState(): unknown {
 		return {
 			scrollTop: this.rootElement?.scrollTop || 0,
 		};
@@ -426,12 +496,13 @@ export abstract class BasesViewBase extends Component {
 	/**
 	 * Lifecycle: Restore ephemeral state.
 	 */
-	setEphemeralState(state: any): void {
+	setEphemeralState(state: unknown): void {
 		if (!state || !this.rootElement || !this.rootElement.isConnected) return;
 
 		try {
-			if (state.scrollTop !== undefined) {
-				this.rootElement.scrollTop = state.scrollTop;
+			const s = state as Record<string, any>;
+			if (s.scrollTop !== undefined) {
+				this.rootElement.scrollTop = s.scrollTop;
 			}
 		} catch (e) {
 			console.debug("[Bookshelf][Bases] Failed to restore ephemeral state:", e);

@@ -311,6 +311,21 @@ export class ProgressUpdateModal extends Modal {
 			cls: 'bookshelf-message bookshelf-message-error',
 		});
 
+		const iconEl = messageContainer.createEl('div', {
+			cls: 'bookshelf-message-icon',
+			text: '!',
+		});
+
+		const textEl = messageContainer.createEl('div', {
+			cls: 'bookshelf-message-text',
+			text: message,
+		});
+
+		const closeButton = messageContainer.createEl('button', {
+			cls: 'bookshelf-message-close',
+			text: 'Dismiss',
+		});
+
 		closeButton.addEventListener('click', () => {
 			messageContainer.remove();
 		});

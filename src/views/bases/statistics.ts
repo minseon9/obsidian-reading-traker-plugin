@@ -1,6 +1,6 @@
 import { TFile } from 'obsidian';
 import { Book } from '../../models/book';
-import { BasesViewBase } from './basesViewBase';
+import { BasesViewBase } from './base';
 import { BookStatistics } from './bookStatistics';
 import BookshelfPlugin from '../../main';
 
@@ -21,7 +21,7 @@ export class StatisticsBasesView extends BasesViewBase {
 		if (!this.rootElement || !this.data?.data) return;
 
 		try {
-			const dataItems = this.dataAdapter.extractDataItems();
+			const dataItems = this.extractDataItems();
 			this.books = await this.extractBooksFromBasesData(dataItems);
 			this.stats = await this.calculateStatistics();
 

@@ -1,7 +1,7 @@
 import { TFile } from 'obsidian';
 import { Book } from '../../models/book';
 import { BookStatus } from '../../models/bookStatus';
-import { BasesViewBase } from './basesViewBase';
+import { BasesViewBase } from './base';
 import { BookCard } from '../bookCard';
 import { BookFileReader } from '../../services/bookFileService/bookFileReader';
 import { BookFileUpdater } from '../../services/bookFileService/bookFileUpdater';
@@ -37,7 +37,7 @@ export class BookshelfBasesView extends BasesViewBase {
 		try {
 			
 			// Extract data using adapter
-			const dataItems = this.dataAdapter.extractDataItems();
+			const dataItems = this.extractDataItems();
 
 			// Extract books from Bases data
 			this.books = await this.extractBooksFromBasesData(dataItems);
@@ -273,7 +273,7 @@ export class BookshelfBasesView extends BasesViewBase {
 		dropZone.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 40px; min-height: 200px; border: 2px dashed var(--background-modifier-border); border-radius: 8px; text-align: center; color: var(--text-muted); transition: all 0.2s;';
 
 		const icon = doc.createElement('div');
-		icon.textContent = '📚';
+		icon.textContent = '??';
 		icon.style.cssText = 'font-size: 3em; margin-bottom: 16px;';
 		dropZone.appendChild(icon);
 
@@ -571,7 +571,7 @@ export class BookshelfBasesView extends BasesViewBase {
 
 		const icon = doc.createElement('div');
 		icon.className = 'bookshelf-empty-icon';
-		icon.textContent = '📚';
+		icon.textContent = '??';
 		icon.style.cssText = 'font-size: 4em; margin-bottom: 16px;';
 		emptyState.appendChild(icon);
 

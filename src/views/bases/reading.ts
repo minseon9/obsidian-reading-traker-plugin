@@ -1,6 +1,6 @@
 import { TFile } from 'obsidian';
 import { Book } from '../../models/book';
-import { BasesViewBase } from './basesViewBase';
+import { BasesViewBase } from './base';
 import { BookCard } from '../bookCard';
 import BookshelfPlugin from '../../main';
 
@@ -16,7 +16,7 @@ export class ReadingBasesView extends BasesViewBase {
 		if (!this.rootElement || !this.data?.data) return;
 
 		try {
-			const dataItems = this.dataAdapter.extractDataItems();
+			const dataItems = this.extractDataItems();
 			const allBooks = await this.extractBooksFromBasesData(dataItems);
 			
 			// Filter only reading books

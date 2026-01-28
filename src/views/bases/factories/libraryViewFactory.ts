@@ -1,5 +1,5 @@
 import BookshelfPlugin from "../../../main";
-import { LibraryBasesView } from "../libraryView";
+import { LibraryBasesView } from "../library";
 
 export function buildLibraryViewFactory(plugin: BookshelfPlugin) {
 	return (controller: any, containerEl: HTMLElement) => {

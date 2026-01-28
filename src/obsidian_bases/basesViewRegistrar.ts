@@ -1,11 +1,11 @@
 /* eslint-disable no-console */
 import BookshelfPlugin from "../main";
 import {requireApiVersion} from "obsidian";
-import {buildBookshelfViewFactory as buildFactory} from "../views/bases/factories/bookshelfViewFactory";
-import {buildReadingViewFactory} from "../views/bases/factories/readingViewFactory";
-import {buildLibraryViewFactory} from "../views/bases/factories/libraryViewFactory";
-import {buildStatisticsViewFactory} from "../views/bases/factories/statisticsViewFactory";
 import {registerBasesView, unregisterBasesView} from "./basesPluginClient";
+import { BookshelfBasesView } from "../views/bases/bookshelf";
+import { ReadingBasesView } from "../views/bases/reading";
+import { LibraryBasesView } from "../views/bases/library";
+import { StatisticsBasesView } from "../views/bases/statistics";
 
 /**
  * Register Bookshelf views with Bases plugin
@@ -24,28 +24,36 @@ export async function registerBasesBookshelfView(plugin: BookshelfPlugin): Promi
 			const bookshelfSuccess = registerBasesView(plugin, "bookshelfView", {
 				name: "Bookshelf View",
 				icon: "book-open",
-				factory: buildFactory(plugin),
+				factory: (controller: unknown, containerEl: HTMLElement) => {
+					return new BookshelfBasesView(controller, containerEl, plugin);
+				},
 			});
 
 			// Register Reading View
 			const readingSuccess = registerBasesView(plugin, "bookshelfReadingView", {
 				name: "Reading Books",
 				icon: "book-open-text",
-				factory: buildReadingViewFactory(plugin),
+				factory: (controller: unknown, containerEl: HTMLElement) => {
+					return new ReadingBasesView(controller, containerEl, plugin);
+				},
 			});
 
 			// Register Library View
 			const librarySuccess = registerBasesView(plugin, "bookshelfLibraryView", {
 				name: "Library",
 				icon: "library",
-				factory: buildLibraryViewFactory(plugin),
+				factory: (controller: unknown, containerEl: HTMLElement) => {
+					return new LibraryBasesView(controller, containerEl, plugin);
+				},
 			});
 
 			// Register Statistics View
 			const statisticsSuccess = registerBasesView(plugin, "bookshelfStatisticsView", {
 				name: "Reading Statistics",
 				icon: "bar-chart",
-				factory: buildStatisticsViewFactory(plugin),
+				factory: (controller: unknown, containerEl: HTMLElement) => {
+					return new StatisticsBasesView(controller, containerEl, plugin);
+				},
 			});
 
 			if (!bookshelfSuccess && !readingSuccess && !librarySuccess && !statisticsSuccess) {
