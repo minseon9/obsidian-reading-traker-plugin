@@ -6,7 +6,6 @@ import { FolderManager } from "./services/pathService/folderManager";
 import { PathManager } from "./services/pathService/pathManager";
 import { FrontmatterParser } from "./services/frontmatterService/frontmatterParser";
 import { FrontmatterCreator } from "./services/frontmatterService/frontmatterCreator";
-import { BookshelfView } from "./views/bookshelfView";
 import { SearchModal } from "./views/bookSearchModal";
 import { ProgressUpdateModal } from "./views/progressUpdateModal";
 import { getCurrentDateTime } from "./utils/dateUtils";
@@ -40,9 +39,6 @@ export default class BookshelfPlugin extends Plugin {
 
 		// Register commands
 		registerCommands(this.app, this);
-
-		// Register legacy ItemView (for backward compatibility)
-		this.registerView('bookshelf-view', (leaf) => new BookshelfView(leaf, this));
 
 		// Register Bases views
 		await registerBasesBookshelfView(this);
@@ -148,7 +144,6 @@ export default class BookshelfPlugin extends Plugin {
 	}
 
 	async onunload() {
-		this.app.workspace.detachLeavesOfType('bookshelf-view');
 		unregisterBasesViews(this);
 	}
 
@@ -203,27 +198,12 @@ export default class BookshelfPlugin extends Plugin {
 		const viewsFolder = PathManager.getViewsFolderPath(this.settings.bookFolder);
 		const baseFilePath = normalizePath(`${viewsFolder}/bookshelf-default.base`);
 
-		// Try to open Bases view first
+		// Open Bases view
 		const baseFile = this.app.vault.getAbstractFileByPath(baseFilePath);
 		if (baseFile && baseFile instanceof TFile) {
 			// Open the .base file in a new leaf
 			const leaf = workspace.getRightLeaf(false) || workspace.getLeaf(true);
 			await leaf.openFile(baseFile);
-			workspace.revealLeaf(leaf);
-			return;
-		}
-
-		// Fallback to legacy ItemView
-		let leaf = workspace.getLeavesOfType('bookshelf-view')[0];
-		if (!leaf) {
-			const rightLeaf = workspace.getRightLeaf(false);
-			if (rightLeaf) {
-				await rightLeaf.setViewState({ type: 'bookshelf-view', active: true });
-				leaf = rightLeaf;
-			}
-		}
-
-		if (leaf) {
 			workspace.revealLeaf(leaf);
 		}
 	}
