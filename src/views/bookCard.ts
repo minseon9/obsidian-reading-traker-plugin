@@ -172,6 +172,14 @@ export class BookCard {
 			
 			const pagesRemaining = pageDetails.createEl('span');
 			pagesRemaining.textContent = `Remaining: ${remainingPages} pages`;
+		} else {
+			// Show message when total pages is not set
+			const noTotalContainer = infoContainer.createEl('div');
+			noTotalContainer.style.cssText = 'padding: 12px; background: var(--background-secondary); border-radius: 6px; margin-bottom: 16px;';
+			
+			const noTotalText = noTotalContainer.createEl('div');
+			noTotalText.style.cssText = 'font-size: 12px; color: var(--text-muted); text-align: center;';
+			noTotalText.textContent = 'Please set total pages in frontmatter to track progress';
 		}
 
 		// Update progress button (for reading books)

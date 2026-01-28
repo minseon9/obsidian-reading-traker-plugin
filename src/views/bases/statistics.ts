@@ -444,20 +444,25 @@ export class StatisticsBasesView extends BasesViewBase {
 		const years = Object.keys(this.stats!.yearlyStats).sort().reverse();
 		
 		if (years.length === 0) {
-			const emptyState = doc.createElement('div');
-			emptyState.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-muted);';
-			
-			const emptyIcon = doc.createElement('div');
-			emptyIcon.textContent = '??';
-			emptyIcon.style.cssText = 'font-size: 48px; margin-bottom: 16px; opacity: 0.5;';
-			
-			const emptyText = doc.createElement('div');
-			emptyText.textContent = 'No yearly data available';
-			emptyText.style.cssText = 'font-size: 14px;';
-			
-			emptyState.appendChild(emptyIcon);
-			emptyState.appendChild(emptyText);
-			container.appendChild(emptyState);
+			// Show empty charts with axes
+			const chartsGrid = doc.createElement('div');
+			chartsGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;';
+
+			['Finished books', 'Pages read', 'Reading days'].forEach(title => {
+				const chartContainer = doc.createElement('div');
+				chartContainer.style.cssText = 'padding: 16px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border);';
+				const chartTitle = doc.createElement('h3');
+				chartTitle.textContent = title;
+				chartTitle.style.cssText = 'margin: 0 0 12px 0; font-size: 0.9em; color: var(--text-muted);';
+				chartContainer.appendChild(chartTitle);
+				const chart = doc.createElement('div');
+				chart.style.cssText = 'height: 200px; position: relative;';
+				this.renderEmptyChart(chart, doc, 'Year');
+				chartContainer.appendChild(chart);
+				chartsGrid.appendChild(chartContainer);
+			});
+
+			container.appendChild(chartsGrid);
 			return;
 		}
 
@@ -592,20 +597,25 @@ export class StatisticsBasesView extends BasesViewBase {
 		const months = Object.keys(this.stats!.monthlyStats).sort().reverse().slice(0, 12);
 		
 		if (months.length === 0) {
-			const emptyState = doc.createElement('div');
-			emptyState.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-muted);';
-			
-			const emptyIcon = doc.createElement('div');
-			emptyIcon.textContent = '??';
-			emptyIcon.style.cssText = 'font-size: 48px; margin-bottom: 16px; opacity: 0.5;';
-			
-			const emptyText = doc.createElement('div');
-			emptyText.textContent = 'No monthly data available';
-			emptyText.style.cssText = 'font-size: 14px;';
-			
-			emptyState.appendChild(emptyIcon);
-			emptyState.appendChild(emptyText);
-			container.appendChild(emptyState);
+			// Show empty charts with axes
+			const chartsGrid = doc.createElement('div');
+			chartsGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;';
+
+			['Finished books (Last 12)', 'Pages read (Last 12)', 'Reading days (Last 12)'].forEach(title => {
+				const chartContainer = doc.createElement('div');
+				chartContainer.style.cssText = 'padding: 16px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border);';
+				const chartTitle = doc.createElement('h3');
+				chartTitle.textContent = title;
+				chartTitle.style.cssText = 'margin: 0 0 12px 0; font-size: 0.9em; color: var(--text-muted);';
+				chartContainer.appendChild(chartTitle);
+				const chart = doc.createElement('div');
+				chart.style.cssText = 'height: 200px; position: relative;';
+				this.renderEmptyChart(chart, doc, 'Month');
+				chartContainer.appendChild(chart);
+				chartsGrid.appendChild(chartContainer);
+			});
+
+			container.appendChild(chartsGrid);
 			return;
 		}
 
@@ -771,40 +781,29 @@ export class StatisticsBasesView extends BasesViewBase {
 			.sort((a, b) => b[1] - a[1])
 			.slice(0, 10);
 
-		if (categories.length === 0) {
-			const emptyState = doc.createElement('div');
-			emptyState.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; color: var(--text-muted);';
-			
-			const emptyIcon = doc.createElement('div');
-			emptyIcon.textContent = '??';
-			emptyIcon.style.cssText = 'font-size: 48px; margin-bottom: 16px; opacity: 0.5;';
-			
-			const emptyText = doc.createElement('div');
-			emptyText.textContent = 'No category data available';
-			emptyText.style.cssText = 'font-size: 14px;';
-			
-			emptyState.appendChild(emptyIcon);
-			emptyState.appendChild(emptyText);
-			section.appendChild(emptyState);
-		} else {
-			const chartContainer = doc.createElement('div');
-			chartContainer.style.cssText = 'padding: 16px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border);';
-			
-			const chartTitle = doc.createElement('h3');
-			chartTitle.textContent = 'Books by category (Top 10)';
-			chartTitle.style.cssText = 'margin: 0 0 12px 0; font-size: 0.9em; color: var(--text-muted);';
-			chartContainer.appendChild(chartTitle);
+		// Always show chart container in grid format (matching time-based stats)
+		const chartContainer = doc.createElement('div');
+		chartContainer.style.cssText = 'padding: 16px; background: var(--background-secondary); border-radius: 8px; border: 1px solid var(--background-modifier-border); max-width: calc(33.333% - 11px);';
+		
+		const chartTitle = doc.createElement('h3');
+		chartTitle.textContent = 'Books by category (Top 10)';
+		chartTitle.style.cssText = 'margin: 0 0 12px 0; font-size: 0.9em; color: var(--text-muted);';
+		chartContainer.appendChild(chartTitle);
 
-			const barChart = doc.createElement('div');
-			barChart.style.cssText = 'height: 200px; position: relative;';
+		const barChart = doc.createElement('div');
+		barChart.style.cssText = 'height: 200px; position: relative;';
+		
+		if (categories.length === 0) {
+			this.renderEmptyChart(barChart, doc, 'Category');
+		} else {
 			this.renderBarChart(barChart, doc, categories.map(([category, count]) => ({
 				label: category,
 				value: count,
 			})));
-			chartContainer.appendChild(barChart);
-			section.appendChild(chartContainer);
 		}
-
+		
+		chartContainer.appendChild(barChart);
+		section.appendChild(chartContainer);
 		container.appendChild(section);
 	}
 
