@@ -12,24 +12,6 @@ export class TemplateProcessor {
 		this.app = app;
 	}
 
-	/**
-	 * Load template file content
-	 * @param templatePath Template file path
-	 * @returns Template content or default template if file not found
-	 */
-	async loadTemplate(templatePath: string): Promise<string> {
-		try {
-			const templateFile = this.app.vault.getAbstractFileByPath(templatePath);
-			if (templateFile instanceof TFile) {
-				return await this.app.vault.read(templateFile);
-			}
-		} catch (error) {
-			// Template file not found, use default
-		}
-
-		// Return default template if file not found
-		return this.getDefaultTemplate();
-	}
 
 	/**
 	 * Process template with book data
@@ -40,6 +22,14 @@ export class TemplateProcessor {
 	processTemplate(template: string, book: Book): string {
 		const data = this.prepareTemplateData(book);
 		return this.replacePlaceholders(template, data);
+	}
+
+	/**
+	 * Get default template (public method)
+	 * @returns Default template content
+	 */
+	getDefaultTemplate(): string {
+		return this.getDefaultTemplateContent();
 	}
 
 	/**
@@ -99,6 +89,13 @@ export class TemplateProcessor {
 	private replacePlaceholders(template: string, data: Record<string, string>): string {
 		let result = template;
 
+		// Remove Templater syntax blocks (they are not processed by our simple template system)
+		// Remove lines with <%* ... %> syntax
+		result = result.replace(/<%[\s\S]*?%>/g, '');
+		
+		// Remove comment lines that reference Templater
+		result = result.replace(/^%%[\s\S]*?%%$/gm, '');
+
 		// Replace date placeholders ({{DATE:FORMAT}})
 		result = result.replace(/\{\{DATE:([^}]+)\}\}/g, (match, format) => {
 			return formatDate(new Date(), format);
@@ -110,14 +107,17 @@ export class TemplateProcessor {
 			result = result.replace(placeholder, value);
 		}
 
-		return result;
+		// Clean up multiple empty lines
+		result = result.replace(/\n{3,}/g, '\n\n');
+
+		return result.trim();
 	}
 
 	/**
 	 * Get default template
 	 * @returns Default template content
 	 */
-	private getDefaultTemplate(): string {
+	private getDefaultTemplateContent(): string {
 		return `---
 title: "{{title}}"
 subtitle: "{{subtitle}}"

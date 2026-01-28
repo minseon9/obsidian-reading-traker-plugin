@@ -17,6 +17,9 @@ export class SearchModal extends Modal {
 	private fileManager: FileManagerUtils;
 	private searchTimeout: NodeJS.Timeout | null = null;
 	private currentResults: Book[] = [];
+	private currentOffset: number = 0;
+	private hasMoreResults: boolean = false;
+	private isLoadingMore: boolean = false;
 
 	constructor(app: App, plugin: BookshelfPlugin) {
 		super(app);
@@ -50,15 +53,17 @@ export class SearchModal extends Modal {
 		});
 		this.loadingIndicator.style.display = 'none';
 
-		// Error message
-		this.errorMessage = contentEl.createEl('div', {
-			cls: 'bookshelf-error',
-		});
-		this.errorMessage.style.display = 'none';
+		// Error message container (will be created dynamically)
 
-		// Results container
+		// Results container (scrollable)
 		this.resultsContainer = contentEl.createEl('div', {
 			cls: 'bookshelf-search-results',
+		});
+		this.resultsContainer.style.cssText = 'max-height: 60vh; overflow-y: auto; margin-top: 16px;';
+
+		// Add scroll listener for infinite scroll
+		this.resultsContainer.addEventListener('scroll', () => {
+			this.handleScroll();
 		});
 
 		// Focus on search input
@@ -89,42 +94,95 @@ export class SearchModal extends Modal {
 			this.resultsContainer.empty();
 			this.hideLoading();
 			this.hideError();
+			this.currentResults = [];
+			this.currentOffset = 0;
+			this.hasMoreResults = false;
 			return;
 		}
 
 		this.showLoading();
 		this.hideError();
+		this.currentResults = [];
+		this.currentOffset = 0;
+		this.hasMoreResults = false;
 
 		// Debounce search: wait 500ms after user stops typing
 		this.searchTimeout = setTimeout(() => {
-			this.performSearch(query);
+			this.performSearch(query, 0);
 		}, 500);
 	}
 
 	/**
 	 * Perform search
 	 */
-	private async performSearch(query: string) {
+	private async performSearch(query: string, offset: number = 0) {
 		try {
 			const limit = this.plugin.settings.searchResultLimit || 20;
-			const results = await this.openLibraryClient.searchBooks(query, limit);
-			this.currentResults = results;
-			this.renderResults(results);
+			const results = await this.openLibraryClient.searchBooks(query, limit, offset);
+			
+			if (offset === 0) {
+				this.currentResults = results;
+			} else {
+				this.currentResults = [...this.currentResults, ...results];
+			}
+			
+			// Check if there are more results (assuming if we got full limit, there might be more)
+			this.hasMoreResults = results.length === limit;
+			this.currentOffset = offset + results.length;
+			
+			this.renderResults(this.currentResults);
 			this.hideLoading();
+			this.isLoadingMore = false;
 		} catch (error) {
 			this.hideLoading();
 			this.showError('Failed to search books. Please try again later.');
-			this.resultsContainer.empty();
+			if (offset === 0) {
+				this.resultsContainer.empty();
+			}
+			this.isLoadingMore = false;
 		}
+	}
+
+	/**
+	 * Handle scroll for infinite scroll
+	 */
+	private handleScroll() {
+		if (this.isLoadingMore || !this.hasMoreResults) return;
+
+		const container = this.resultsContainer;
+		const scrollTop = container.scrollTop;
+		const scrollHeight = container.scrollHeight;
+		const clientHeight = container.clientHeight;
+
+		// Load more when user scrolls to 80% of the container
+		if (scrollTop + clientHeight >= scrollHeight * 0.8) {
+			this.loadMoreResults();
+		}
+	}
+
+	/**
+	 * Load more search results
+	 */
+	private async loadMoreResults() {
+		if (this.isLoadingMore || !this.hasMoreResults) return;
+
+		const query = this.searchInput.value.trim();
+		if (!query) return;
+
+		this.isLoadingMore = true;
+		await this.performSearch(query, this.currentOffset);
 	}
 
 	/**
 	 * Render search results
 	 */
 	private renderResults(results: Book[]) {
-		this.resultsContainer.empty();
+		// Only clear if this is a new search (offset 0)
+		if (this.currentOffset === results.length) {
+			this.resultsContainer.empty();
+		}
 
-		if (results.length === 0) {
+		if (results.length === 0 && this.currentOffset === 0) {
 			this.resultsContainer.createEl('div', {
 				cls: 'bookshelf-no-results',
 				text: 'No books found. Try a different search query.',
@@ -133,6 +191,10 @@ export class SearchModal extends Modal {
 		}
 
 		results.forEach((book, index) => {
+			// Skip if already rendered (for infinite scroll)
+			if (index < this.currentOffset - results.length) {
+				return;
+			}
 			const resultItem = this.resultsContainer.createEl('div', {
 				cls: 'bookshelf-result-item',
 			});
@@ -199,6 +261,15 @@ export class SearchModal extends Modal {
 				resultItem.createEl('hr');
 			}
 		});
+
+		// Show loading indicator at bottom if loading more
+		if (this.isLoadingMore) {
+			const loadingEl = this.resultsContainer.createEl('div', {
+				cls: 'bookshelf-loading-more',
+				text: 'Loading more...',
+			});
+			loadingEl.style.cssText = 'text-align: center; padding: 16px; color: var(--text-muted);';
+		}
 	}
 
 	/**
@@ -213,9 +284,48 @@ export class SearchModal extends Modal {
 				btn.textContent = 'Adding...';
 			});
 
+			// Try to get detailed book information from Books API using ISBN
+			// This is important for getting accurate totalPages and other detailed info
+			let detailedBook: Book = book;
+			if (book.isbn13) {
+				const booksApiBook = await this.openLibraryClient.getBookByISBN(book.isbn13);
+				if (booksApiBook) {
+					// Merge: prefer Books API data for detailed fields, keep search result as fallback
+					detailedBook = {
+						...book,
+						...booksApiBook,
+						// Prefer Books API totalPages (most accurate)
+						totalPages: booksApiBook.totalPages || book.totalPages,
+						// Keep original cover if Books API doesn't have one
+						coverUrl: booksApiBook.coverUrl || book.coverUrl,
+						// Keep original title/author if Books API is missing
+						title: booksApiBook.title || book.title,
+						author: booksApiBook.author.length > 0 ? booksApiBook.author : book.author,
+						// Prefer Books API publisher and publishDate
+						publisher: booksApiBook.publisher || book.publisher,
+						publishDate: booksApiBook.publishDate || book.publishDate,
+					};
+				}
+			} else if (book.isbn10) {
+				const booksApiBook = await this.openLibraryClient.getBookByISBN(book.isbn10);
+				if (booksApiBook) {
+					detailedBook = {
+						...book,
+						...booksApiBook,
+						// Prefer Books API totalPages (most accurate)
+						totalPages: booksApiBook.totalPages || book.totalPages,
+						coverUrl: booksApiBook.coverUrl || book.coverUrl,
+						title: booksApiBook.title || book.title,
+						author: booksApiBook.author.length > 0 ? booksApiBook.author : book.author,
+						publisher: booksApiBook.publisher || book.publisher,
+						publishDate: booksApiBook.publishDate || book.publishDate,
+					};
+				}
+			}
+
 			// Set default status from settings
 			const bookWithStatus: Book = {
-				...book,
+				...detailedBook,
 				status: this.plugin.settings.defaultStatus,
 			};
 
@@ -237,14 +347,36 @@ export class SearchModal extends Modal {
 			}
 
 			// Create book note (uses books subfolder internally)
-			await this.fileManager.createBookNote(
+			const createdFile = await this.fileManager.createBookNote(
 				bookWithStatus,
-				this.plugin.settings.bookFolder,
-				this.plugin.settings.templateFile
+				this.plugin.settings.bookFolder
 			);
 
 			// Show success message
 			this.showSuccess(`Book "${bookWithStatus.title}" added successfully!`);
+			
+			// Force Bases views to refresh by triggering a workspace update
+			// Bases should auto-detect new files, but we can help it along
+			try {
+				// Trigger a workspace refresh event that Bases listens to
+				this.app.vault.trigger('modify', createdFile);
+				
+				// Also try to refresh any open Bases views
+				this.app.workspace.iterateAllLeaves((leaf) => {
+					if (leaf.view?.getViewType?.() === 'bases') {
+						const basesView = leaf.view as any;
+						// Try to trigger refresh if available
+						if (typeof basesView.requestUpdate === 'function') {
+							basesView.requestUpdate();
+						} else if (typeof basesView.refresh === 'function') {
+							basesView.refresh();
+						}
+					}
+				});
+			} catch (e) {
+				// Ignore errors - Bases should auto-detect anyway
+				console.debug('[Bookshelf] Error triggering Bases refresh:', e);
+			}
 			
 			// Close modal after a short delay
 			setTimeout(() => {
@@ -276,27 +408,72 @@ export class SearchModal extends Modal {
 	}
 
 	/**
-	 * Show error message
+	 * Show error message with nice UI
 	 */
 	private showError(message: string) {
-		this.errorMessage.textContent = message;
-		this.errorMessage.style.display = 'block';
-		this.errorMessage.style.color = 'var(--text-error)';
+		// Remove any existing messages
+		const existing = this.contentEl.querySelector('.bookshelf-message');
+		if (existing) existing.remove();
+
+		const messageContainer = this.contentEl.createEl('div', {
+			cls: 'bookshelf-message bookshelf-message-error',
+		});
+
+		const icon = messageContainer.createEl('div', {
+			cls: 'bookshelf-message-icon',
+			text: '?',
+		});
+
+		const text = messageContainer.createEl('div', {
+			cls: 'bookshelf-message-text',
+			text: message,
+		});
+
+		const closeButton = messageContainer.createEl('button', {
+			cls: 'bookshelf-message-close',
+			text: 'Dismiss',
+		});
+		closeButton.addEventListener('click', () => {
+			messageContainer.remove();
+		});
 	}
 
 	/**
 	 * Hide error message
 	 */
 	private hideError() {
-		this.errorMessage.style.display = 'none';
+		const existing = this.contentEl.querySelector('.bookshelf-message');
+		if (existing) existing.remove();
 	}
 
 	/**
-	 * Show success message
+	 * Show success message with nice UI
 	 */
 	private showSuccess(message: string) {
-		this.errorMessage.textContent = message;
-		this.errorMessage.style.display = 'block';
-		this.errorMessage.style.color = 'var(--text-success)';
+		// Remove any existing messages
+		const existing = this.contentEl.querySelector('.bookshelf-message');
+		if (existing) existing.remove();
+
+		const messageContainer = this.contentEl.createEl('div', {
+			cls: 'bookshelf-message bookshelf-message-success',
+		});
+
+		const icon = messageContainer.createEl('div', {
+			cls: 'bookshelf-message-icon',
+			text: '?',
+		});
+
+		const text = messageContainer.createEl('div', {
+			cls: 'bookshelf-message-text',
+			text: message,
+		});
+
+		const closeButton = messageContainer.createEl('button', {
+			cls: 'bookshelf-message-close',
+			text: 'Close',
+		});
+		closeButton.addEventListener('click', () => {
+			messageContainer.remove();
+		});
 	}
 }

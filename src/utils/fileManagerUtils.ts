@@ -94,7 +94,7 @@ export class FileManagerUtils {
 	}
 
 	/**
-	 * Get shelf folder path (bookFolder/shelf)
+	 * Get shelf folder path (bookFolder/shelf) - DEPRECATED, use getViewsFolderPath instead
 	 * @param baseFolder Base folder path
 	 * @returns Shelf folder path
 	 */
@@ -103,16 +103,23 @@ export class FileManagerUtils {
 	}
 
 	/**
+	 * Get views folder path (bookFolder/Views)
+	 * @param baseFolder Base folder path
+	 * @returns Views folder path
+	 */
+	getViewsFolderPath(baseFolder: string): string {
+		return normalizePath(`${baseFolder}/Views`);
+	}
+
+	/**
 	 * Create book note from template
 	 * @param book Book data
 	 * @param baseFolder Base folder path (e.g., "Bookshelf")
-	 * @param templatePath Template file path
 	 * @returns Created file
 	 */
 	async createBookNote(
 		book: Book,
-		baseFolder: string,
-		templatePath: string
+		baseFolder: string
 	): Promise<TFile> {
 		// Use books subfolder
 		const booksFolder = this.getBooksFolderPath(baseFolder);
@@ -126,8 +133,8 @@ export class FileManagerUtils {
 			throw new Error(`Book note already exists: ${existing.path}`);
 		}
 
-		// Load and process template
-		const template = await this.templateProcessor.loadTemplate(templatePath);
+		// Use default template
+		const template = this.templateProcessor.getDefaultTemplate();
 		const content = this.templateProcessor.processTemplate(template, book);
 
 		// Create file
@@ -175,7 +182,8 @@ export class FileManagerUtils {
 	 */
 	async updateReadingProgress(
 		file: TFile, 
-		page: number, 
+		endPage: number,
+		startPage: number,
 		notes?: string,
 		autoStatusChange: boolean = true
 	): Promise<void> {
@@ -187,13 +195,14 @@ export class FileManagerUtils {
 			? frontmatter.total 
 			: (typeof frontmatter.totalPages === 'number' ? frontmatter.totalPages : undefined);
 
-		// Update frontmatter with new progress
+		// Update frontmatter with new progress (using endPage as the current page)
 		const updatedContent = this.frontmatterProcessor.updateReadingProgress(
 			content,
-			page,
+			endPage,
 			totalPages,
 			notes,
-			autoStatusChange
+			autoStatusChange,
+			startPage
 		);
 
 		await this.app.vault.modify(file, updatedContent);
