@@ -68,6 +68,12 @@ export class FrontmatterProcessor {
 					});
 				}
 			}
+			
+			// reading_history is now stored in body, not frontmatter (legacy support)
+			// reading_history_summary is stored in frontmatter for statistics
+			if (key === 'reading_history') {
+				continue; // Skip old reading_history in frontmatter
+			}
 
 			// Parse numbers
 			if (/^\d+$/.test(value)) {
@@ -123,15 +129,45 @@ export class FrontmatterProcessor {
 
 			if (Array.isArray(value)) {
 				if (value.length === 0) {
-					lines.push(`${key}: []`);
+					// Only include empty arrays for reading_history_summary (for initialization)
+					if (key === 'reading_history_summary') {
+						lines.push(`${key}: []`);
+					}
+					// Skip other empty arrays
+					continue;
 				} else {
-					const formatted = value.map(item => {
-						if (typeof item === 'string') {
-							return `"${item}"`;
+					// Handle reading_history_summary (array of objects for statistics)
+					if (key === 'reading_history_summary' && value.length > 0 && typeof value[0] === 'object' && value[0] !== null && !Array.isArray(value[0])) {
+						lines.push(`${key}:`);
+						for (const item of value) {
+							if (!item || typeof item !== 'object') continue;
+							lines.push(`  - date: "${item.date || ''}"`);
+							lines.push(`    startPage: ${item.startPage ?? 0}`);
+							lines.push(`    endPage: ${item.endPage ?? 0}`);
+							lines.push(`    pagesRead: ${item.pagesRead ?? 0}`);
+							if (item.timestamp) {
+								lines.push(`    timestamp: "${item.timestamp}"`);
+							}
 						}
-						return String(item);
-					}).join(', ');
-					lines.push(`${key}: [${formatted}]`);
+					} else if (key === 'reading_history') {
+						// Skip old reading_history - it's stored in body now
+						continue;
+					} else if (value.length > 0 && typeof value[0] === 'object' && value[0] !== null && !Array.isArray(value[0])) {
+						// Format as YAML array of objects (for other object arrays)
+						lines.push(`${key}:`);
+						for (const item of value) {
+							lines.push(`  - ${JSON.stringify(item)}`);
+						}
+					} else {
+						// Regular array
+						const formatted = value.map(item => {
+							if (typeof item === 'string') {
+								return `"${item}"`;
+							}
+							return String(item);
+						}).join(', ');
+						lines.push(`${key}: [${formatted}]`);
+					}
 				}
 			} else if (typeof value === 'string') {
 				// Escape quotes in string values
@@ -167,15 +203,13 @@ export class FrontmatterProcessor {
 	 * @returns Frontmatter data object
 	 */
 	bookToFrontmatter(book: Book): Record<string, any> {
-		return {
+		const frontmatter: Record<string, any> = {
 			title: book.title,
 			subtitle: book.subtitle,
 			author: book.author,
 			category: book.category,
 			publisher: book.publisher,
 			publish: book.publishDate,
-			total: book.totalPages,
-			isbn: `${book.isbn10 || ''} ${book.isbn13 || ''}`.trim() || undefined,
 			cover: book.coverUrl,
 			status: book.status,
 			created: book.created,
@@ -184,6 +218,19 @@ export class FrontmatterProcessor {
 			read_finished: book.readFinished,
 			read_page: book.readPage || 0,
 		};
+
+		// Only include total if it's a valid number
+		if (book.totalPages !== undefined && book.totalPages !== null && !isNaN(book.totalPages)) {
+			frontmatter.total = book.totalPages;
+		}
+
+		// Only include isbn if it exists
+		const isbn = `${book.isbn10 || ''} ${book.isbn13 || ''}`.trim();
+		if (isbn) {
+			frontmatter.isbn = isbn;
+		}
+
+		return frontmatter;
 	}
 
 	/**
@@ -206,6 +253,18 @@ export class FrontmatterProcessor {
 			}
 		}
 
+		// Calculate total pages read from reading_history_summary if available
+		let calculatedReadPage = typeof frontmatter.read_page === 'number' ? frontmatter.read_page : 0;
+		if (frontmatter.reading_history_summary && Array.isArray(frontmatter.reading_history_summary)) {
+			const totalFromHistory = frontmatter.reading_history_summary.reduce((sum: number, record: any) => {
+				return sum + (record.pagesRead || 0);
+			}, 0);
+			// Use the higher value (either from read_page or calculated from history)
+			if (totalFromHistory > calculatedReadPage) {
+				calculatedReadPage = totalFromHistory;
+			}
+		}
+
 		return {
 			title: frontmatter.title || '',
 			subtitle: frontmatter.subtitle,
@@ -218,7 +277,7 @@ export class FrontmatterProcessor {
 			isbn13,
 			coverUrl: frontmatter.cover,
 			status: frontmatter.status || 'unread',
-			readPage: typeof frontmatter.read_page === 'number' ? frontmatter.read_page : 0,
+			readPage: calculatedReadPage,
 			readStarted: frontmatter.read_started,
 			readFinished: frontmatter.read_finished,
 			created: frontmatter.created || getCurrentDateTime(),
@@ -239,7 +298,8 @@ export class FrontmatterProcessor {
 		page: number,
 		totalPages?: number,
 		notes?: string,
-		autoStatusChange: boolean = true
+		autoStatusChange: boolean = true,
+		startPage?: number
 	): string {
 		const { frontmatter, body } = this.extractFrontmatter(content);
 		
@@ -264,31 +324,183 @@ export class FrontmatterProcessor {
 		// Update timestamp
 		frontmatter.updated = getCurrentDateTime();
 
-		// Add reading history entry if tracking is enabled
-		// Note: trackReadingHistory parameter would need to be passed from plugin settings
-		// For now, always track if notes are provided or if we want to track
+		// Add reading history entry to both frontmatter (summary) and body (detailed)
+		// Frontmatter summary is for statistics, body contains full details
 		const shouldTrackHistory = true; // Will be controlled by settings in the future
 		if (shouldTrackHistory) {
-			if (!frontmatter.reading_history) {
-				frontmatter.reading_history = [];
+			// Parse existing reading history from body
+			const existingHistory = this.parseReadingHistoryFromBody(body);
+			
+			// Use provided startPage if available, otherwise get from last record
+			let recordStartPage: number;
+			if (startPage !== undefined) {
+				recordStartPage = startPage;
+			} else {
+				const lastRecord = existingHistory.length > 0 
+					? existingHistory[existingHistory.length - 1] 
+					: null;
+				recordStartPage = lastRecord?.endPage || frontmatter.read_page || 0;
 			}
 
-			const lastRecord = frontmatter.reading_history[frontmatter.reading_history.length - 1];
-			const startPage = lastRecord?.end_page || frontmatter.read_page || 0;
-
+			// Create new record with proper structure
 			const newRecord: ReadingRecord = {
 				date: getCurrentDateTime('YYYY-MM-DD'),
-				startPage,
+				startPage: recordStartPage,
 				endPage: page,
-				pagesRead: page - startPage,
-				notes,
+				pagesRead: Math.max(0, page - recordStartPage),
+				notes: notes || undefined,
 				timestamp: getCurrentDateTime(),
 			};
 
-			frontmatter.reading_history.push(newRecord);
+			// Add new record to history
+			existingHistory.push(newRecord);
+
+			// Update frontmatter with summary (for statistics - no notes)
+			if (!frontmatter.reading_history_summary || !Array.isArray(frontmatter.reading_history_summary)) {
+				frontmatter.reading_history_summary = [];
+			}
+			
+			// Add summary entry (without notes for frontmatter)
+			frontmatter.reading_history_summary.push({
+				date: newRecord.date,
+				startPage: newRecord.startPage,
+				endPage: newRecord.endPage,
+				pagesRead: newRecord.pagesRead,
+				timestamp: newRecord.timestamp,
+			});
+
+			// Update body with reading history section (full details with notes)
+			const updatedBody = this.updateReadingHistoryInBody(body, existingHistory);
+			
+			const frontmatterString = this.createFrontmatter(frontmatter);
+			return `${frontmatterString}\n${updatedBody}`;
 		}
 
 		const frontmatterString = this.createFrontmatter(frontmatter);
 		return `${frontmatterString}\n${body}`;
+	}
+
+	/**
+	 * Parse reading history from body content
+	 * Looks for a "## Reading History" section
+	 */
+	parseReadingHistoryFromBody(body: string): ReadingRecord[] {
+		const history: ReadingRecord[] = [];
+		
+		// Look for Reading History section
+		const historySectionRegex = /^##\s+Reading History\s*\n([\s\S]*?)(?=\n##|\n#|$)/m;
+		const match = body.match(historySectionRegex);
+		
+		if (!match || !match[1]) {
+			return history;
+		}
+
+		const historyContent = match[1];
+		// Parse each record (format: ### YYYY-MM-DD or - **Date:** YYYY-MM-DD)
+		const recordRegex = /(?:^###\s+(\d{4}-\d{2}-\d{2})|^-\s+\*\*Date:\*\*\s+(\d{4}-\d{2}-\d{2}))\s*\n([\s\S]*?)(?=\n(?:###|-\s+\*\*Date:)|$)/gm;
+		let recordMatch;
+		
+		while ((recordMatch = recordRegex.exec(historyContent)) !== null) {
+			const date = recordMatch[1] || recordMatch[2] || '';
+			const recordText = recordMatch[3] || '';
+			
+			// Extract fields from record text
+			// Support formats like: "**Start Page:** 0" or "Start: 0" or "From: 0"
+			const startPageMatch = recordText.match(/(?:\*\*Start Page:\*\*|Start Page:|Start:|From:)\s*(\d+)/i);
+			// Support formats like: "**End Page:** 1" or "End Page: 1" or "End: 1" or "To: 1" or "Page: 1"
+			const endPageMatch = recordText.match(/(?:\*\*End Page:\*\*|End Page:|End:|To:|Page:)\s*(\d+)/i);
+			// Support formats like: "**Pages Read:** 1" or "Pages Read: 1" or "Pages: 1" or "Read: 1"
+			const pagesReadMatch = recordText.match(/(?:\*\*Pages Read:\*\*|Pages Read:|Pages:|Read:)\s*(\d+)/i);
+			// Support formats like: "**Timestamp:** 2026-01-28 10:56:10" or "Timestamp: 2026-01-28 10:56:10" or "Time: 2026-01-28 10:56:10"
+			const timestampMatch = recordText.match(/(?:\*\*Timestamp:\*\*|Timestamp:|Time:)\s*([^\n]+)/i);
+			
+			// Extract notes (everything after "Notes:" or after a blank line)
+			let notes: string | undefined;
+			const notesMatch = recordText.match(/(?:Notes?:|Note:)\s*\n?([\s\S]*?)(?=\n(?:Time|Timestamp)|$)/i);
+			if (notesMatch && notesMatch[1]) {
+				notes = notesMatch[1].trim();
+				if (notes === '') notes = undefined;
+			}
+
+			const record: ReadingRecord = {
+				date: date,
+				startPage: startPageMatch && startPageMatch[1] ? parseInt(startPageMatch[1], 10) : 0,
+				endPage: endPageMatch && endPageMatch[1] ? parseInt(endPageMatch[1], 10) : 0,
+				pagesRead: pagesReadMatch && pagesReadMatch[1] ? parseInt(pagesReadMatch[1], 10) : 0,
+				notes: notes,
+				timestamp: timestampMatch && timestampMatch[1] ? timestampMatch[1].trim() : undefined,
+			};
+
+			// Calculate pagesRead if not found
+			if (record.pagesRead === 0 && record.endPage > record.startPage) {
+				record.pagesRead = record.endPage - record.startPage;
+			}
+
+			history.push(record);
+		}
+
+		return history;
+	}
+
+	/**
+	 * Update reading history section in body
+	 * Creates or updates a "## Reading History" section
+	 */
+	private updateReadingHistoryInBody(body: string, history: ReadingRecord[]): string {
+		// Format reading history as markdown
+		const historyLines: string[] = [];
+		historyLines.push('## Reading History');
+		historyLines.push('');
+
+		// Sort by date (newest first)
+		const sortedHistory = [...history].sort((a, b) => {
+			const dateA = a.timestamp || a.date || '';
+			const dateB = b.timestamp || b.date || '';
+			return dateB.localeCompare(dateA);
+		});
+
+		for (const record of sortedHistory) {
+			historyLines.push(`### ${record.date || 'Unknown Date'}`);
+			historyLines.push('');
+			historyLines.push(`- **Start Page:** ${record.startPage ?? 0}`);
+			historyLines.push(`- **End Page:** ${record.endPage ?? 0}`);
+			historyLines.push(`- **Pages Read:** ${record.pagesRead ?? 0}`);
+			if (record.timestamp) {
+				historyLines.push(`- **Timestamp:** ${record.timestamp}`);
+			}
+			if (record.notes) {
+				historyLines.push(`- **Notes:**`);
+				historyLines.push('');
+				// Preserve notes formatting (indent by 2 spaces)
+				const noteLines = record.notes.split('\n');
+				for (const noteLine of noteLines) {
+					historyLines.push(`  ${noteLine}`);
+				}
+			}
+			historyLines.push('');
+		}
+
+		const historySection = historyLines.join('\n');
+
+		// Remove existing Reading History section if present
+		const historySectionRegex = /^##\s+Reading History\s*\n[\s\S]*?(?=\n##|\n#|$)/m;
+		let updatedBody = body;
+
+		if (historySectionRegex.test(body)) {
+			// Replace existing section
+			updatedBody = body.replace(historySectionRegex, historySection);
+		} else {
+			// Add new section at the end (before any existing ## sections, or at the end)
+			// Try to insert before first ## heading
+			const firstHeadingRegex = /^(##\s+[^\n]+)/m;
+			if (firstHeadingRegex.test(body)) {
+				updatedBody = body.replace(firstHeadingRegex, `${historySection}\n\n$1`);
+			} else {
+				// No headings, append to end
+				updatedBody = body.trim() + '\n\n' + historySection;
+			}
+		}
+
+		return updatedBody;
 	}
 }
