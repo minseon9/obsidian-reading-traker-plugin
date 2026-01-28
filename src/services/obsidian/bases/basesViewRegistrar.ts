@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import BookshelfPlugin from "../../../main";
 import {requireApiVersion} from "obsidian";
 import {registerBasesView, unregisterBasesView} from "./basesPluginClient";

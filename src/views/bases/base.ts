@@ -145,7 +145,6 @@ export abstract class BasesViewBase extends Component {
 		
 		const tryInject = () => {
 			attempts++;
-			console.log(`[Bookshelf][Bases] Attempting to inject button (attempt ${attempts}/${maxAttempts})`);
 			this.injectNewBookButton();
 			
 			// If button wasn't injected, try again
@@ -156,10 +155,6 @@ export abstract class BasesViewBase extends Component {
 			
 			if (!buttonExists && attempts < maxAttempts) {
 				setTimeout(tryInject, 200);
-			} else if (buttonExists) {
-				console.log("[Bookshelf][Bases] Button injected successfully");
-			} else {
-				console.warn("[Bookshelf][Bases] Failed to inject button after max attempts");
 			}
 		};
 		
@@ -210,7 +205,6 @@ export abstract class BasesViewBase extends Component {
 
 		// Check if we already added the button (reuse existing)
 		if (toolbarEl.querySelector(".bookshelf-bases-new-book-btn")) {
-			console.log("[Bookshelf][Bases] Button already exists, skipping");
 			return;
 		}
 
@@ -234,14 +228,13 @@ export abstract class BasesViewBase extends Component {
 		// Add label
 		const labelSpan = doc.createElement("span");
 		labelSpan.className = "text-button-label";
-		labelSpan.textContent = "New Book";
+		labelSpan.textContent = "New book";
 		innerBtn.appendChild(labelSpan);
 
 		newBookBtn.appendChild(innerBtn);
 
 		// Add click handler - use direct function reference
 		const handleClick = async (e: Event) => {
-			console.log("[Bookshelf][Bases] New Book button clicked", e.type, e.target);
 			e.stopPropagation();
 			e.preventDefault();
 			e.stopImmediatePropagation();
@@ -255,14 +248,10 @@ export abstract class BasesViewBase extends Component {
 			
 			try {
 				const { SearchModal } = await import("../bookSearchModal");
-				console.log("[Bookshelf][Bases] SearchModal imported successfully");
 				const modal = new SearchModal(app, this.plugin);
-				console.log("[Bookshelf][Bases] SearchModal created, opening...");
 				modal.open();
-				console.log("[Bookshelf][Bases] SearchModal opened");
 			} catch (error) {
 				console.error("[Bookshelf][Bases] Error opening search modal:", error);
-				console.error("[Bookshelf][Bases] Error stack:", error instanceof Error ? error.stack : String(error));
 			}
 		};
 		
