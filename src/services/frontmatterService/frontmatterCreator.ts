@@ -1,4 +1,4 @@
-import * as yaml from 'js-yaml';
+import { stringify as stringifyYaml } from 'yaml';
 import { Frontmatter } from './types';
 
 export class FrontmatterCreator {
@@ -38,12 +38,10 @@ export class FrontmatterCreator {
 		}
 
 		try {
-			const yamlString = yaml.dump(yamlData, {
-				lineWidth: -1,
-				noRefs: true,
-				quotingType: '"',
-				forceQuotes: false,
-				indent: 2,
+			const yamlString = stringifyYaml(yamlData, {
+				lineWidth: 0,
+				defaultStringType: 'QUOTE_DOUBLE',
+				defaultKeyType: 'PLAIN',
 			});
 			return `---\n${yamlString}---`;
 		} catch (error) {

@@ -1,4 +1,4 @@
-import * as yaml from 'js-yaml';
+import { parse as parseYaml } from 'yaml';
 import { Frontmatter, ReadingHistorySummaryItem } from './types';
 
 export class FrontmatterParser {
@@ -13,7 +13,7 @@ export class FrontmatterParser {
 		const frontmatterText = match[1];
 
 		try {
-			const parsed = yaml.load(frontmatterText, { schema: yaml.DEFAULT_SCHEMA }) as Record<string, unknown> | null;
+			const parsed = parseYaml(frontmatterText) as Record<string, unknown> | null;
 			if (!parsed || typeof parsed !== 'object') {
 				return {};
 			}

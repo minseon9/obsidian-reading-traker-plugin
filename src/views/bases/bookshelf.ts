@@ -275,13 +275,12 @@ export class BookshelfBasesView extends BasesViewBase {
 		dropZone.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 40px; min-height: 200px; border: 2px dashed var(--background-modifier-border); border-radius: 8px; text-align: center; color: var(--text-muted); transition: all 0.2s;';
 
 	const description = doc.createElement('p');
-	description.textContent = 'Drag a book from "To read" section here to start reading';
-	// eslint-disable-next-line obsidianmd/no-static-styles-assignment
+	description.textContent = 'Drag a book from "to read" section here to start reading';
 	description.style.cssText = 'margin: 0; font-size: 14px; font-weight: 500;';
 	dropZone.appendChild(description);
 
 	const hint = doc.createElement('p');
-	hint.textContent = 'Or click "New book" to add a new book';
+	hint.textContent = 'Or click "new book" to add a new book';
 		hint.style.cssText = 'margin: 8px 0 0 0; font-size: 12px; color: var(--text-faint);';
 		dropZone.appendChild(hint);
 
@@ -330,13 +329,14 @@ export class BookshelfBasesView extends BasesViewBase {
 				let filePath: string | null = null;
 				
 				const bookData = e.dataTransfer?.getData('application/bookshelf-book');
-				if (bookData) {
-					try {
-						const parsed = JSON.parse(bookData);
-						filePath = parsed.path;
-					} catch (parseError) {
-					}
+			if (bookData) {
+				try {
+					const parsed = JSON.parse(bookData);
+					filePath = parsed.path;
+				} catch {
+					// Ignore parse errors
 				}
+			}
 				
 				if (!filePath) {
 					const textData = e.dataTransfer?.getData('text/plain');
