@@ -28,7 +28,7 @@ export class BookshelfSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName('API').setHeading();
 		new Setting(containerEl)
 			.setName('Timeout (ms)')
-			.setDesc('Timeout duration for Open Library requests (in milliseconds)')
+			.setDesc('Timeout duration for Open Library requests in milliseconds')
 			.addText(text => text
 				.setPlaceholder('5000')
 				.setValue(this.plugin.settings.apiTimeout.toString())
@@ -140,7 +140,7 @@ export class BookshelfSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName('Date & time').setHeading();
 		new Setting(containerEl)
 			.setName('Timezone offset')
-			.setDesc('Timezone offset from UTC in hours (e.g., 0 for UTC, 9 for Korea, -5 for EST)')
+			.setDesc('Timezone offset from UTC in hours, e.g. 0 for UTC, 9 for Korea, -5 for EST')
 			.addText(text => text
 				.setPlaceholder('0')
 				.setValue(this.plugin.settings.timezone.toString())

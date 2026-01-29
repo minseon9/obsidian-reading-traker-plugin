@@ -211,9 +211,9 @@ export default class BookshelfPlugin extends Plugin {
 		const baseFile = this.app.vault.getAbstractFileByPath(baseFilePath);
 		if (baseFile && baseFile instanceof TFile) {
 			// Open the .base file in a new leaf
-			const leaf = workspace.getRightLeaf(false) || workspace.getLeaf(true);
-			await leaf.openFile(baseFile);
-			workspace.revealLeaf(leaf);
+		const leaf = workspace.getRightLeaf(false) || workspace.getLeaf(true);
+		await leaf.openFile(baseFile);
+		await workspace.revealLeaf(leaf);
 		}
 	}
 
