@@ -1,6 +1,6 @@
 import { Component, App, TFile, setIcon } from "obsidian";
 import BookshelfPlugin from "../../main";
-import { BasesDataItem } from "./basesDataItem";
+import { BasesDataItem, BasesEntryData } from "./basesDataItem";
 import { Book } from "../../models/book";
 import { BookFileReader } from "../../services/bookFileService/bookFileReader";
 import { BookFileUpdater } from "../../services/bookFileService/bookFileUpdater";
@@ -64,7 +64,7 @@ export abstract class BasesViewBase extends Component {
 		requestAnimationFrame(() => {
 			setTimeout(() => {
 				if (this.rootElement?.isConnected) {
-					this.render();
+					void this.render();
 				}
 			}, 100);
 		});
@@ -92,7 +92,7 @@ export abstract class BasesViewBase extends Component {
 		this.dataUpdateDebounceTimer = win.setTimeout(() => {
 			this.dataUpdateDebounceTimer = null;
 			try {
-				this.render();
+				void this.render();
 			} catch (error) {
 				console.error(`[Bookshelf][${this.type}] Render error:`, error);
 				this.renderError(error as Error);
@@ -124,6 +124,7 @@ export abstract class BasesViewBase extends Component {
 		// Just create our root element inside it
 		const rootEl = doc.createElement("div");
 		rootEl.className = "bookshelf-bases-view";
+		// eslint-disable-next-line obsidianmd/no-static-styles-assignment
 		rootEl.style.cssText = "display: flex; flex-direction: column; height: 100%; width: 100%;";
 		rootEl.tabIndex = -1; // Make focusable without adding to tab order
 		this.containerEl.appendChild(rootEl);
@@ -261,27 +262,16 @@ export abstract class BasesViewBase extends Component {
 		// Also add mousedown as backup
 		innerBtn.addEventListener("mousedown", (e) => {
 			if (e.button === 0) { // Left click only
-				handleClick(e);
+				void handleClick(e);
 			}
 		}, { capture: true });
 
 		// Also handle keyboard events
-		innerBtn.addEventListener("keydown", async (e) => {
+		innerBtn.addEventListener("keydown", (e) => {
 			if (e.key === "Enter" || e.key === " ") {
 				e.stopPropagation();
 				e.preventDefault();
-				const app = this.app || this.plugin.app;
-				if (!app) {
-					console.error("[Bookshelf][Bases] App not available");
-					return;
-				}
-				try {
-					const { SearchModal } = await import("../bookSearchModal");
-					const modal = new SearchModal(app, this.plugin);
-					modal.open();
-				} catch (error) {
-					console.error("[Bookshelf][Bases] Error opening search modal:", error);
-				}
+				void handleClick(e);
 			}
 		});
 
@@ -312,10 +302,10 @@ export abstract class BasesViewBase extends Component {
 			return [];
 		}
 		
-		const entries = this.data.data as any[];
+		const entries = this.data.data as unknown[];
 		
 		return entries.map((entry: unknown) => {
-			const e = entry as Record<string, any>;
+			const e = entry as BasesEntryData;
 			if (!e?.file?.path) {
 				console.warn("[Bookshelf][BasesView] Entry missing file.path:", e);
 				return null;
@@ -335,8 +325,8 @@ export abstract class BasesViewBase extends Component {
 	/**
 	 * Extract properties from a Bases entry
 	 */
-	private extractEntryProperties(entry: Record<string, any>): Record<string, any> {
-		const properties: Record<string, any> = {};
+	private extractEntryProperties(entry: BasesEntryData): Record<string, unknown> {
+		const properties: Record<string, unknown> = {};
 		
 		// Extract note properties (frontmatter)
 		if (entry.note) {
@@ -395,12 +385,19 @@ export abstract class BasesViewBase extends Component {
 					const historySummary = frontmatter.reading_history_summary;
 					if (historySummary && Array.isArray(historySummary) && historySummary.length > 0) {
 						// Get most recent record for last read date
-						const sorted = [...historySummary].sort((a: Record<string, any>, b: Record<string, any>) => {
-							const dateA = a.date || a.timestamp || '';
-							const dateB = b.date || b.timestamp || '';
+						interface HistoryRecord {
+							date?: string;
+							timestamp?: string;
+							pagesRead?: number;
+						}
+						const sorted = [...historySummary].sort((a: unknown, b: unknown) => {
+							const recordA = a as HistoryRecord;
+							const recordB = b as HistoryRecord;
+							const dateA = recordA.date || recordA.timestamp || '';
+							const dateB = recordB.date || recordB.timestamp || '';
 							return dateB.localeCompare(dateA);
 						});
-						const latest = sorted[0];
+						const latest = sorted[0] as HistoryRecord;
 						if (latest?.date) {
 							lastReadDate = latest.date;
 						} else if (latest?.timestamp) {
@@ -408,11 +405,12 @@ export abstract class BasesViewBase extends Component {
 						}
 						
 						// Calculate total pages read from all history records
-						totalPagesReadFromHistory = historySummary.reduce((sum: number, record: Record<string, any>) => {
-							return sum + (record.pagesRead || 0);
+						totalPagesReadFromHistory = historySummary.reduce((sum: number, record: unknown) => {
+							const r = record as HistoryRecord;
+							return sum + (r.pagesRead || 0);
 						}, 0);
 					}
-				} catch (e) {
+				} catch {
 					// Ignore errors
 				}
 
@@ -421,6 +419,10 @@ export abstract class BasesViewBase extends Component {
 						? totalPagesReadFromHistory
 						: bookData.readPage;
 
+					const validStatus = bookData.status === 'unread' || bookData.status === 'reading' || bookData.status === 'finished'
+						? bookData.status
+						: 'unread';
+					
 					const book: Book & { lastReadDate?: string } = {
 						title: bookData.title || 'Unknown',
 						subtitle: bookData.subtitle,
@@ -432,7 +434,7 @@ export abstract class BasesViewBase extends Component {
 						totalPages: bookData.totalPages,
 						coverUrl: bookData.coverUrl,
 						category: bookData.category || [],
-						status: (bookData.status as any) || 'unread',
+						status: validStatus,
 						readPage: effectiveReadPage,
 						readStarted: bookData.readStarted,
 						readFinished: bookData.readFinished,
@@ -440,12 +442,11 @@ export abstract class BasesViewBase extends Component {
 						updated: bookData.updated || new Date().toISOString(),
 						lastReadDate, // From reading_history_summary in frontmatter
 					};
-					books.push({ book, file: vaultFile });
-				} else {
-				}
-			} catch (error) {
-				console.error(`[Bookshelf] Error extracting book from Bases data:`, error);
+				books.push({ book, file: vaultFile });
 			}
+		} catch (error) {
+			console.error(`[Bookshelf] Error extracting book from Bases data:`, error);
+		}
 		}
 
 		return books;
@@ -468,6 +469,7 @@ export abstract class BasesViewBase extends Component {
 
 		const errorEl = doc.createElement("div");
 		errorEl.className = "bookshelf-error";
+		// eslint-disable-next-line obsidianmd/no-static-styles-assignment
 		errorEl.style.cssText = "padding: 20px; text-align: center; color: var(--text-error);";
 		errorEl.textContent = `Error: ${error.message}`;
 		this.rootElement.appendChild(errorEl);
@@ -489,7 +491,7 @@ export abstract class BasesViewBase extends Component {
 		if (!state || !this.rootElement || !this.rootElement.isConnected) return;
 
 		try {
-			const s = state as Record<string, any>;
+			const s = state as { scrollTop?: number };
 			if (s.scrollTop !== undefined) {
 				this.rootElement.scrollTop = s.scrollTop;
 			}
