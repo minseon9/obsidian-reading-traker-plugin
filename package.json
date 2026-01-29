@@ -1,7 +1,7 @@
 {
 	"name": "obsidian-bookshelf-plugin",
 	"version": "0.1.0",
-	"description": "Obsidian?? ?? ??? ????? ??? ? ?? ????",
+	"description": "Reading Tracker for Obsidian - Import books, track progress, and analyze reading habits",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
@@ -10,7 +10,21 @@
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"lint": "eslint ."
 	},
-	"keywords": [],
+	"keywords": [
+		"obsidian",
+		"obsidian-plugin",
+		"reading",
+		"books",
+		"tracker",
+		"library",
+		"reading-tracker",
+		"book-management"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/minseon9/obsidian-bookshelf-plugin.git"
+	},
+	"author": "minseon9",
 	"license": "0-BSD",
 	"devDependencies": {
 		"@eslint/js": "9.30.1",

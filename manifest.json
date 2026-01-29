@@ -5,5 +5,7 @@
 	"minAppVersion": "0.15.0",
 	"description": "Reading Tracker for importing books from Open Library, organizing your reading shelves, and analyzing your reading habits.",
 	"author": "minseon9",
-	"isDesktopOnly": false
+	"authorUrl": "https://github.com/minseon9",
+	"isDesktopOnly": false,
+	"fundingUrl": "https://github.com/minseon9/obsidian-bookshelf-plugin"
 }
