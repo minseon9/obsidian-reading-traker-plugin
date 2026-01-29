@@ -39,14 +39,23 @@ export class BookCard {
 		const card = document.createElement('div');
 		card.className = `bookshelf-book-card bookshelf-book-reading bookshelf-layout-${layout}`;
 		// Make card larger with more space for information
-		card.style.cssText = 'min-height: 420px; display: flex; flex-direction: column;';
+		card.setCssProps({
+			"min-height": "420px",
+			display: "flex",
+			"flex-direction": "column"
+		});
 
 		// Cover image (larger)
 		if (this.book.coverUrl) {
 			const coverContainer = card.createEl('div', {
 				cls: 'bookshelf-book-cover',
 			});
-			coverContainer.style.cssText = 'width: 100%; height: 240px; margin-bottom: 16px; flex-shrink: 0;';
+			coverContainer.setCssProps({
+				width: "100%",
+				height: "240px",
+				"margin-bottom": "16px",
+				"flex-shrink": "0"
+			});
 
 			const coverImg = coverContainer.createEl('img', {
 				attr: {
@@ -54,10 +63,16 @@ export class BookCard {
 					alt: this.book.title || 'Book cover',
 				},
 			});
-			coverImg.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);';
+			coverImg.setCssProps({
+				width: "100%",
+				height: "100%",
+				"object-fit": "cover",
+				"border-radius": "6px",
+				"box-shadow": "0 2px 8px rgba(0, 0, 0, 0.15)"
+			});
 
 			coverImg.addEventListener('error', () => {
-				coverImg.style.display = 'none';
+				coverImg.setCssProps({ display: "none" });
 			});
 		}
 
@@ -65,20 +80,37 @@ export class BookCard {
 		const infoContainer = card.createEl('div', {
 			cls: 'bookshelf-book-info',
 		});
-		infoContainer.style.cssText = 'padding: 0 12px 12px 12px; flex: 1; display: flex; flex-direction: column;';
+		infoContainer.setCssProps({
+			padding: "0 12px 12px 12px",
+			flex: "1",
+			display: "flex",
+			"flex-direction": "column"
+		});
 
 		// Title
-		infoContainer.createEl('div', {
+		const titleEl = infoContainer.createEl('div', {
 			cls: 'bookshelf-book-title',
 			text: this.book.title,
-		}).style.cssText = 'font-size: 17px; font-weight: 600; margin-bottom: 8px; line-height: 1.4; color: var(--text-normal);';
+		});
+		titleEl.setCssProps({
+			"font-size": "17px",
+			"font-weight": "600",
+			"margin-bottom": "8px",
+			"line-height": "1.4",
+			color: "var(--text-normal)"
+		});
 
 		// Author
 		if (this.book.author && this.book.author.length > 0) {
-			infoContainer.createEl('div', {
+			const authorEl = infoContainer.createEl('div', {
 				cls: 'bookshelf-book-author',
 				text: this.book.author.join(', '),
-			}).style.cssText = 'font-size: 13px; color: var(--text-muted); margin-bottom: 16px;';
+			});
+			authorEl.setCssProps({
+				"font-size": "13px",
+				color: "var(--text-muted)",
+				"margin-bottom": "16px"
+			});
 		}
 
 		// Get last read date from book data
@@ -88,14 +120,31 @@ export class BookCard {
 		const statusSection = infoContainer.createEl('div', {
 			cls: 'bookshelf-reading-status',
 		});
-		statusSection.style.cssText = 'font-size: 12px; color: var(--text-muted); margin-bottom: 16px; padding: 12px; background-color: var(--background-secondary); border-radius: 6px; display: flex; flex-direction: column; gap: 8px;';
+		statusSection.setCssProps({
+			"font-size": "12px",
+			color: "var(--text-muted)",
+			"margin-bottom": "16px",
+			padding: "12px",
+			"background-color": "var(--background-secondary)",
+			"border-radius": "6px",
+			display: "flex",
+			"flex-direction": "column",
+			gap: "8px"
+		});
 
 		// Started date (always show if available)
 		if (this.book.readStarted) {
 			const startedRow = statusSection.createEl('div');
-			startedRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center;';
+			startedRow.setCssProps({
+				display: "flex",
+				"justify-content": "space-between",
+				"align-items": "center"
+			});
 			const startedLabel = startedRow.createEl('span', { text: 'Started:' });
-			startedLabel.style.cssText = 'color: var(--text-faint); font-size: 11px;';
+			startedLabel.setCssProps({
+				color: "var(--text-faint)",
+				"font-size": "11px"
+			});
 			// Handle both "YYYY-MM-DD HH:mm:ss" and ISO formats
 			const dateStr = typeof this.book.readStarted === 'string' 
 				? (this.book.readStarted.includes('T') 
@@ -103,33 +152,72 @@ export class BookCard {
 					: this.book.readStarted.split(' ')[0])
 				: String(this.book.readStarted);
 			const startedValue = startedRow.createEl('span', { text: dateStr });
-			startedValue.style.cssText = 'font-weight: 600; color: var(--text-normal); font-size: 12px;';
+			startedValue.setCssProps({
+				"font-weight": "600",
+				color: "var(--text-normal)",
+				"font-size": "12px"
+			});
 		} else {
 			// Show placeholder if not started yet
 			const startedRow = statusSection.createEl('div');
-			startedRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center;';
+			startedRow.setCssProps({
+				display: "flex",
+				"justify-content": "space-between",
+				"align-items": "center"
+			});
 			const startedLabel = startedRow.createEl('span', { text: 'Started:' });
-			startedLabel.style.cssText = 'color: var(--text-faint); font-size: 11px;';
+			startedLabel.setCssProps({
+				color: "var(--text-faint)",
+				"font-size": "11px"
+			});
 			const startedValue = startedRow.createEl('span', { text: 'Not started' });
-			startedValue.style.cssText = 'font-weight: 400; color: var(--text-muted); font-size: 12px; font-style: italic;';
+			startedValue.setCssProps({
+				"font-weight": "400",
+				color: "var(--text-muted)",
+				"font-size": "12px",
+				"font-style": "italic"
+			});
 		}
 
 		// Last read date (always show if available)
 		if (lastReadDate) {
 			const lastReadRow = statusSection.createEl('div');
-			lastReadRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center;';
+			lastReadRow.setCssProps({
+				display: "flex",
+				"justify-content": "space-between",
+				"align-items": "center"
+			});
 			const lastReadLabel = lastReadRow.createEl('span', { text: 'Last read:' });
-			lastReadLabel.style.cssText = 'color: var(--text-faint); font-size: 11px;';
+			lastReadLabel.setCssProps({
+				color: "var(--text-faint)",
+				"font-size": "11px"
+			});
 			const lastReadValue = lastReadRow.createEl('span', { text: lastReadDate });
-			lastReadValue.style.cssText = 'font-weight: 700; color: var(--interactive-accent); font-size: 12px;';
+			lastReadValue.setCssProps({
+				"font-weight": "700",
+				color: "var(--interactive-accent)",
+				"font-size": "12px"
+			});
 		} else if (this.book.readStarted) {
 			// Show "Not yet" if started but no reading history
 			const lastReadRow = statusSection.createEl('div');
-			lastReadRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center;';
+			lastReadRow.setCssProps({
+				display: "flex",
+				"justify-content": "space-between",
+				"align-items": "center"
+			});
 			const lastReadLabel = lastReadRow.createEl('span', { text: 'Last read:' });
-			lastReadLabel.style.cssText = 'color: var(--text-faint); font-size: 11px;';
+			lastReadLabel.setCssProps({
+				color: "var(--text-faint)",
+				"font-size": "11px"
+			});
 			const lastReadValue = lastReadRow.createEl('span', { text: 'Not yet' });
-			lastReadValue.style.cssText = 'font-weight: 400; color: var(--text-muted); font-size: 12px; font-style: italic;';
+			lastReadValue.setCssProps({
+				"font-weight": "400",
+				color: "var(--text-muted)",
+				"font-size": "12px",
+				"font-style": "italic"
+			});
 		}
 
 		// Progress section (enhanced) - always show if totalPages is available
@@ -141,36 +229,67 @@ export class BookCard {
 			const progressContainer = infoContainer.createEl('div', {
 				cls: 'bookshelf-progress-container',
 			});
-			progressContainer.style.cssText = 'margin-bottom: 16px;';
+			progressContainer.setCssProps({ "margin-bottom": "16px" });
 
 			// Progress text with more details
 			const progressHeader = progressContainer.createEl('div');
-			progressHeader.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;';
+			progressHeader.setCssProps({
+				display: "flex",
+				"justify-content": "space-between",
+				"align-items": "center",
+				"margin-bottom": "8px"
+			});
 			
 			const progressLabel = progressHeader.createEl('div');
-			progressLabel.style.cssText = 'font-size: 12px; font-weight: 600; color: var(--text-normal);';
+			progressLabel.setCssProps({
+				"font-size": "12px",
+				"font-weight": "600",
+				color: "var(--text-normal)"
+			});
 			progressLabel.textContent = 'Progress';
 			
 			const progressPercent = progressHeader.createEl('div');
-			progressPercent.style.cssText = 'font-size: 14px; font-weight: 700; color: var(--interactive-accent);';
+			progressPercent.setCssProps({
+				"font-size": "14px",
+				"font-weight": "700",
+				color: "var(--interactive-accent)"
+			});
 			progressPercent.textContent = `${Math.round(progress)}%`;
 
 			// Progress bar
 			const progressBar = progressContainer.createEl('div', {
 				cls: 'bookshelf-progress-bar',
 			});
-			progressBar.style.cssText = 'width: 100%; height: 10px; background-color: var(--background-modifier-border); border-radius: 5px; overflow: hidden; margin-bottom: 6px;';
+			progressBar.setCssProps({
+				width: "100%",
+				height: "10px",
+				"background-color": "var(--background-modifier-border)",
+				"border-radius": "5px",
+				overflow: "hidden",
+				"margin-bottom": "6px"
+			});
 
 			const progressFill = progressContainer.createEl('div', {
 				cls: 'bookshelf-progress-fill',
 			});
-			progressFill.style.cssText = `width: ${progress}%; height: 100%; background-color: var(--interactive-accent); transition: width 0.3s; border-radius: 5px;`;
+			progressFill.setCssProps({
+				width: `${progress}%`,
+				height: "100%",
+				"background-color": "var(--interactive-accent)",
+				transition: "width 0.3s",
+				"border-radius": "5px"
+			});
 
 			progressBar.appendChild(progressFill);
 
 			// Page details
 			const pageDetails = progressContainer.createEl('div');
-			pageDetails.style.cssText = 'display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);';
+			pageDetails.setCssProps({
+				display: "flex",
+				"justify-content": "space-between",
+				"font-size": "11px",
+				color: "var(--text-muted)"
+			});
 			
 			const pagesRead = pageDetails.createEl('span');
 			pagesRead.textContent = `Read: ${currentPage} pages`;
@@ -180,10 +299,19 @@ export class BookCard {
 		} else {
 			// Show message when total pages is not set
 			const noTotalContainer = infoContainer.createEl('div');
-			noTotalContainer.style.cssText = 'padding: 12px; background: var(--background-secondary); border-radius: 6px; margin-bottom: 16px;';
+			noTotalContainer.setCssProps({
+				padding: "12px",
+				background: "var(--background-secondary)",
+				"border-radius": "6px",
+				"margin-bottom": "16px"
+			});
 			
 			const noTotalText = noTotalContainer.createEl('div');
-			noTotalText.style.cssText = 'font-size: 12px; color: var(--text-muted); text-align: center;';
+			noTotalText.setCssProps({
+				"font-size": "12px",
+				color: "var(--text-muted)",
+				"text-align": "center"
+			});
 			noTotalText.textContent = 'Please set total pages in frontmatter to track progress';
 		}
 
@@ -192,13 +320,21 @@ export class BookCard {
 			const buttonContainer = infoContainer.createEl('div', {
 				cls: 'bookshelf-card-actions',
 			});
-			buttonContainer.style.cssText = 'margin-top: auto; padding-top: 12px;';
+			buttonContainer.setCssProps({
+				"margin-top": "auto",
+				"padding-top": "12px"
+			});
 
 			const updateButton = buttonContainer.createEl('button', {
 				cls: 'mod-cta',
 				text: 'Update Progress',
 			});
-			updateButton.style.cssText = 'width: 100%; padding: 10px; font-size: 13px; font-weight: 600;';
+			updateButton.setCssProps({
+				width: "100%",
+				padding: "10px",
+				"font-size": "13px",
+				"font-weight": "600"
+			});
 
 			updateButton.addEventListener('click', (e) => {
 				e.stopPropagation(); // Prevent card click

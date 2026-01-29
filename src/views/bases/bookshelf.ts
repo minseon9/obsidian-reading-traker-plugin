@@ -62,9 +62,13 @@ export class BookshelfBasesView extends BasesViewBase {
 
 		// No header needed - layout is fixed
 
-		// Main content container
-		const contentContainer = doc.createElement('div');
-		contentContainer.style.cssText = 'flex: 1; overflow-y: auto; padding: 12px;';
+	// Main content container
+	const contentContainer = doc.createElement('div');
+	contentContainer.setCssProps({
+		flex: "1",
+		"overflow-y": "auto",
+		padding: "12px"
+	});
 
 		// Filter books
 		const readingBooks = this.books.filter(({ book }) => book.status === 'reading');
@@ -108,22 +112,35 @@ export class BookshelfBasesView extends BasesViewBase {
 	): void {
 		const doc = container.ownerDocument;
 
-		// Section header
-		const sectionHeader = doc.createElement('div');
-		sectionHeader.className = 'bookshelf-section-header';
-		sectionHeader.style.cssText = 'margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--background-modifier-border);';
-		
-		const titleEl = doc.createElement('h2');
-		titleEl.textContent = `Reading (${books.length})`;
-		titleEl.style.cssText = 'margin: 0; font-size: 1.5em; font-weight: 600;';
-		sectionHeader.appendChild(titleEl);
-		container.appendChild(sectionHeader);
+	// Section header
+	const sectionHeader = doc.createElement('div');
+	sectionHeader.className = 'bookshelf-section-header';
+	sectionHeader.setCssProps({
+		"margin-bottom": "16px",
+		"padding-bottom": "8px",
+		"border-bottom": "2px solid var(--background-modifier-border)"
+	});
+	
+	const titleEl = doc.createElement('h2');
+	titleEl.textContent = `Reading (${books.length})`;
+	titleEl.setCssProps({
+		margin: "0",
+		"font-size": "1.5em",
+		"font-weight": "600"
+	});
+	sectionHeader.appendChild(titleEl);
+	container.appendChild(sectionHeader);
 
-		// Books grid with drop zone (always grid for reading books)
-		// Larger cards need more space
-		const booksGrid = doc.createElement('div');
-		booksGrid.className = 'bookshelf-section-books bookshelf-layout-grid bookshelf-drop-zone';
-		booksGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; min-height: 100px;';
+	// Books grid with drop zone (always grid for reading books)
+	// Larger cards need more space
+	const booksGrid = doc.createElement('div');
+	booksGrid.className = 'bookshelf-section-books bookshelf-layout-grid bookshelf-drop-zone';
+	booksGrid.setCssProps({
+		display: "grid",
+		"grid-template-columns": "repeat(auto-fill, minmax(280px, 1fr))",
+		gap: "20px",
+		"min-height": "100px"
+	});
 
 		// Drop handlers for reading section
 		const handleDragOver = (e: DragEvent) => {
@@ -257,71 +274,107 @@ export class BookshelfBasesView extends BasesViewBase {
 	private renderEmptyReadingSection(container: HTMLElement): void {
 		const doc = container.ownerDocument;
 		
-		// Section header
-		const sectionHeader = doc.createElement('div');
-		sectionHeader.className = 'bookshelf-section-header';
-		sectionHeader.style.cssText = 'margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--background-modifier-border);';
-		
-		const titleEl = doc.createElement('h2');
-		titleEl.textContent = 'Reading (0)';
-		titleEl.style.cssText = 'margin: 0; font-size: 1.5em; font-weight: 600;';
-		sectionHeader.appendChild(titleEl);
-		container.appendChild(sectionHeader);
+	// Section header
+	const sectionHeader = doc.createElement('div');
+	sectionHeader.className = 'bookshelf-section-header';
+	sectionHeader.setCssProps({
+		"margin-bottom": "16px",
+		"padding-bottom": "8px",
+		"border-bottom": "2px solid var(--background-modifier-border)"
+	});
+	
+	const titleEl = doc.createElement('h2');
+	titleEl.textContent = 'Reading (0)';
+	titleEl.setCssProps({
+		margin: "0",
+		"font-size": "1.5em",
+		"font-weight": "600"
+	});
+	sectionHeader.appendChild(titleEl);
+	container.appendChild(sectionHeader);
 
-		// Empty drop zone (can still accept drops)
-		const dropZone = doc.createElement('div');
-		dropZone.className = 'bookshelf-section-books bookshelf-layout-grid bookshelf-drop-zone';
-		dropZone.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 40px; min-height: 200px; border: 2px dashed var(--background-modifier-border); border-radius: 8px; text-align: center; color: var(--text-muted); transition: all 0.2s;';
+	// Empty drop zone (can still accept drops)
+	const dropZone = doc.createElement('div');
+	dropZone.className = 'bookshelf-section-books bookshelf-layout-grid bookshelf-drop-zone';
+	dropZone.setCssProps({
+		display: "flex",
+		"flex-direction": "column",
+		"align-items": "center",
+		"justify-content": "center",
+		padding: "60px 40px",
+		"min-height": "200px",
+		border: "2px dashed var(--background-modifier-border)",
+		"border-radius": "8px",
+		"text-align": "center",
+		color: "var(--text-muted)",
+		transition: "all 0.2s"
+	});
 
-	const description = doc.createElement('p');
-	description.textContent = 'Drag a book from "to read" section here to start reading';
-	description.style.cssText = 'margin: 0; font-size: 14px; font-weight: 500;';
-	dropZone.appendChild(description);
+const description = doc.createElement('p');
+description.textContent = 'Drag a book from "to read" section here to start reading';
+description.setCssProps({
+	margin: "0",
+	"font-size": "14px",
+	"font-weight": "500"
+});
+dropZone.appendChild(description);
 
-	const hint = doc.createElement('p');
-	hint.textContent = 'Or click "new book" to add a new book';
-		hint.style.cssText = 'margin: 8px 0 0 0; font-size: 12px; color: var(--text-faint);';
-		dropZone.appendChild(hint);
+const hint = doc.createElement('p');
+hint.textContent = 'Or click "new book" to add a new book';
+	hint.setCssProps({
+		margin: "8px 0 0 0",
+		"font-size": "12px",
+		color: "var(--text-faint)"
+	});
+	dropZone.appendChild(hint);
 
 		// Add drop handlers to empty zone
 		dropZone.addEventListener('dragover', (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			if (e.dataTransfer) {
-				e.dataTransfer.dropEffect = 'move';
-			}
-			dropZone.classList.add('drag-over');
-			dropZone.style.borderColor = 'var(--interactive-accent)';
-			dropZone.style.backgroundColor = 'var(--background-modifier-hover)';
+		e.dataTransfer.dropEffect = 'move';
+		}
+		dropZone.classList.add('drag-over');
+		dropZone.setCssProps({
+			"border-color": "var(--interactive-accent)",
+			"background-color": "var(--background-modifier-hover)"
 		});
+	});
 
-		dropZone.addEventListener('dragenter', (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			dropZone.classList.add('drag-over');
-			dropZone.style.borderColor = 'var(--interactive-accent)';
-			dropZone.style.backgroundColor = 'var(--background-modifier-hover)';
+	dropZone.addEventListener('dragenter', (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		dropZone.classList.add('drag-over');
+		dropZone.setCssProps({
+			"border-color": "var(--interactive-accent)",
+			"background-color": "var(--background-modifier-hover)"
 		});
+	});
 
-		dropZone.addEventListener('dragleave', (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			const rect = dropZone.getBoundingClientRect();
-			const x = e.clientX;
-			const y = e.clientY;
-			if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-				dropZone.classList.remove('drag-over');
-				dropZone.style.borderColor = 'var(--background-modifier-border)';
-				dropZone.style.backgroundColor = '';
-			}
-		});
+	dropZone.addEventListener('dragleave', (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const rect = dropZone.getBoundingClientRect();
+		const x = e.clientX;
+		const y = e.clientY;
+		if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+			dropZone.classList.remove('drag-over');
+			dropZone.setCssProps({
+				"border-color": "var(--background-modifier-border)",
+				"background-color": ""
+			});
+		}
+	});
 
 		dropZone.addEventListener('drop', async (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			dropZone.classList.remove('drag-over');
-			dropZone.style.borderColor = 'var(--background-modifier-border)';
-			dropZone.style.backgroundColor = '';
+		e.preventDefault();
+		e.stopPropagation();
+		dropZone.classList.remove('drag-over');
+		dropZone.setCssProps({
+			"border-color": "var(--background-modifier-border)",
+			"background-color": ""
+		});
 
 
 			try {
@@ -363,28 +416,43 @@ export class BookshelfBasesView extends BasesViewBase {
 	private renderEmptyUnreadSection(container: HTMLElement): void {
 		const doc = container.ownerDocument;
 		
-		const section = doc.createElement('div');
-		section.className = 'bookshelf-unread-subsection';
-		section.style.cssText = 'margin-top: 32px;';
+	const section = doc.createElement('div');
+	section.className = 'bookshelf-unread-subsection';
+	section.setCssProps({ "margin-top": "32px" });
 
-		// Collapsible header
-		const header = doc.createElement('div');
-		header.className = 'bookshelf-subsection-header';
-		header.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--background-modifier-border);';
-		
-		const titleEl = doc.createElement('h3');
-		titleEl.textContent = 'To Read (0)';
-		titleEl.style.cssText = 'margin: 0; font-size: 1.1em; font-weight: 500; color: var(--text-muted);';
-		header.appendChild(titleEl);
+	// Collapsible header
+	const header = doc.createElement('div');
+	header.className = 'bookshelf-subsection-header';
+	header.setCssProps({
+		display: "flex",
+		"align-items": "center",
+		"justify-content": "space-between",
+		padding: "8px 0",
+		"border-bottom": "1px solid var(--background-modifier-border)"
+	});
+	
+	const titleEl = doc.createElement('h3');
+	titleEl.textContent = 'To Read (0)';
+	titleEl.setCssProps({
+		margin: "0",
+		"font-size": "1.1em",
+		"font-weight": "500",
+		color: "var(--text-muted)"
+	});
+	header.appendChild(titleEl);
 
-		section.appendChild(header);
+	section.appendChild(header);
 
-		const content = doc.createElement('div');
-		content.style.cssText = 'padding: 20px; text-align: center; color: var(--text-muted);';
-		content.textContent = 'No unread books.';
-		section.appendChild(content);
+	const content = doc.createElement('div');
+	content.setCssProps({
+		padding: "20px",
+		"text-align": "center",
+		color: "var(--text-muted)"
+	});
+	content.textContent = 'No unread books.';
+	section.appendChild(content);
 
-		container.appendChild(section);
+	container.appendChild(section);
 	}
 
 	/**
@@ -396,50 +464,85 @@ export class BookshelfBasesView extends BasesViewBase {
 	): void {
 		const doc = container.ownerDocument;
 
-		// Collapsible section
-		const section = doc.createElement('div');
-		section.className = 'bookshelf-unread-subsection';
-		section.style.cssText = 'margin-top: 32px;';
+	// Collapsible section
+	const section = doc.createElement('div');
+	section.className = 'bookshelf-unread-subsection';
+	section.setCssProps({ "margin-top": "32px" });
 
-		// Collapsible header
-		const header = doc.createElement('div');
-		header.className = 'bookshelf-subsection-header';
-		header.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 8px 0; cursor: pointer; border-bottom: 1px solid var(--background-modifier-border);';
-		
-		const titleEl = doc.createElement('h3');
-		titleEl.textContent = `To Read (${books.length})`;
-		titleEl.style.cssText = 'margin: 0; font-size: 1.1em; font-weight: 500; color: var(--text-muted);';
-		header.appendChild(titleEl);
+	// Collapsible header
+	const header = doc.createElement('div');
+	header.className = 'bookshelf-subsection-header';
+	header.setCssProps({
+		display: "flex",
+		"align-items": "center",
+		"justify-content": "space-between",
+		padding: "8px 0",
+		cursor: "pointer",
+		"border-bottom": "1px solid var(--background-modifier-border)"
+	});
+	
+	const titleEl = doc.createElement('h3');
+	titleEl.textContent = `To Read (${books.length})`;
+	titleEl.setCssProps({
+		margin: "0",
+		"font-size": "1.1em",
+		"font-weight": "500",
+		color: "var(--text-muted)"
+	});
+	header.appendChild(titleEl);
 
-		const chevron = doc.createElement('span');
-		chevron.textContent = '?';
-		chevron.style.cssText = 'font-size: 10px; color: var(--text-muted); transition: transform 0.2s;';
-		header.appendChild(chevron);
+	const chevron = doc.createElement('span');
+	chevron.textContent = '?';
+	chevron.setCssProps({
+		"font-size": "10px",
+		color: "var(--text-muted)",
+		transition: "transform 0.2s"
+	});
+	header.appendChild(chevron);
 
-		// Collapsible content
-		const content = doc.createElement('div');
-		content.className = 'bookshelf-unread-list';
-		content.style.cssText = 'max-height: 300px; overflow-y: auto; margin-top: 8px;';
-		
-		let isExpanded = true;
-		const toggleExpand = () => {
-			isExpanded = !isExpanded;
-			content.style.display = isExpanded ? 'block' : 'none';
-			chevron.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)';
-		};
+	// Collapsible content
+	const content = doc.createElement('div');
+	content.className = 'bookshelf-unread-list';
+	content.setCssProps({
+		"max-height": "300px",
+		"overflow-y": "auto",
+		"margin-top": "8px"
+	});
+	
+	let isExpanded = true;
+	const toggleExpand = () => {
+		isExpanded = !isExpanded;
+		content.setCssProps({
+			display: isExpanded ? "block" : "none"
+		});
+		chevron.setCssProps({
+			transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)"
+		});
+	};
 
-		header.addEventListener('click', toggleExpand);
+	header.addEventListener('click', toggleExpand);
 
-		// Simple list of unread books
-		const list = doc.createElement('ul');
-		list.style.cssText = 'list-style: none; padding: 0; margin: 0;';
+	// Simple list of unread books
+	const list = doc.createElement('ul');
+	list.setCssProps({
+		"list-style": "none",
+		padding: "0",
+		margin: "0"
+	});
 
-		books.forEach(({ book, file }) => {
-			const listItem = doc.createElement('li');
-			listItem.className = 'bookshelf-unread-item';
-			listItem.draggable = true;
-			listItem.dataset.bookPath = file.path;
-			listItem.style.cssText = 'padding: 8px 12px; border-bottom: 1px solid var(--background-modifier-border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;';
+	books.forEach(({ book, file }) => {
+		const listItem = doc.createElement('li');
+		listItem.className = 'bookshelf-unread-item';
+		listItem.draggable = true;
+		listItem.dataset.bookPath = file.path;
+		listItem.setCssProps({
+			padding: "8px 12px",
+			"border-bottom": "1px solid var(--background-modifier-border)",
+			cursor: "pointer",
+			display: "flex",
+			"justify-content": "space-between",
+			"align-items": "center"
+		});
 			listItem.addEventListener('click', (e) => {
 				// Only open if not dragging
 				if (e.defaultPrevented) return;
@@ -492,29 +595,42 @@ export class BookshelfBasesView extends BasesViewBase {
 				}
 			});
 
-			// Title and author
-			const info = doc.createElement('div');
-			info.style.cssText = 'flex: 1;';
+		// Title and author
+		const info = doc.createElement('div');
+		info.setCssProps({ flex: "1" });
 
-			const title = doc.createElement('div');
-			title.textContent = book.title;
-			title.style.cssText = 'font-weight: 500; font-size: 13px; margin-bottom: 2px;';
-			info.appendChild(title);
+		const title = doc.createElement('div');
+		title.textContent = book.title;
+		title.setCssProps({
+			"font-weight": "500",
+			"font-size": "13px",
+			"margin-bottom": "2px"
+		});
+		info.appendChild(title);
 
-			if (book.author && book.author.length > 0) {
-				const author = doc.createElement('div');
-				author.textContent = book.author.join(', ');
-				author.style.cssText = 'font-size: 11px; color: var(--text-muted);';
-				info.appendChild(author);
-			}
+		if (book.author && book.author.length > 0) {
+			const author = doc.createElement('div');
+			author.textContent = book.author.join(', ');
+			author.setCssProps({
+				"font-size": "11px",
+				color: "var(--text-muted)"
+			});
+			info.appendChild(author);
+		}
 
-			listItem.appendChild(info);
+		listItem.appendChild(info);
 
-			// Drag indicator
-			const dragIcon = doc.createElement('span');
-			dragIcon.textContent = '';
-			dragIcon.style.cssText = 'color: var(--text-faint); font-size: 12px; margin-left: 8px; cursor: grab; user-select: none;';
-			dragIcon.title = 'Drag to Reading section to start reading';
+		// Drag indicator
+		const dragIcon = doc.createElement('span');
+		dragIcon.textContent = '';
+		dragIcon.setCssProps({
+			color: "var(--text-faint)",
+			"font-size": "12px",
+			"margin-left": "8px",
+			cursor: "grab",
+			"user-select": "none"
+		});
+		dragIcon.title = 'Drag to Reading section to start reading';
 			// Make drag icon also draggable
 			dragIcon.addEventListener('mousedown', (e) => {
 				e.stopPropagation();
@@ -560,23 +676,36 @@ export class BookshelfBasesView extends BasesViewBase {
 	/**
 	 * Render empty state when no books are added
 	 */
-	private renderEmptyState(container: HTMLElement): void {
-		const doc = container.ownerDocument;
-		const emptyState = doc.createElement('div');
-		emptyState.className = 'bookshelf-empty-state';
-		emptyState.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center;';
+private renderEmptyState(container: HTMLElement): void {
+	const doc = container.ownerDocument;
+	const emptyState = doc.createElement('div');
+	emptyState.className = 'bookshelf-empty-state';
+	emptyState.setCssProps({
+		display: "flex",
+		"flex-direction": "column",
+		"align-items": "center",
+		"justify-content": "center",
+		padding: "60px 20px",
+		"text-align": "center"
+	});
 
-		const title = doc.createElement('h2');
-		title.className = 'bookshelf-empty-title';
-		title.textContent = 'No books added yet';
-		title.style.cssText = 'margin: 0 0 8px 0; font-size: 1.5em;';
-		emptyState.appendChild(title);
+	const title = doc.createElement('h2');
+	title.className = 'bookshelf-empty-title';
+	title.textContent = 'No books added yet';
+	title.setCssProps({
+		margin: "0 0 8px 0",
+		"font-size": "1.5em"
+	});
+	emptyState.appendChild(title);
 
-		const description = doc.createElement('p');
-		description.className = 'bookshelf-empty-description';
-		description.textContent = 'Start building your bookshelf by searching and adding books.';
-		description.style.cssText = 'margin: 0 0 24px 0; color: var(--text-muted);';
-		emptyState.appendChild(description);
+	const description = doc.createElement('p');
+	description.className = 'bookshelf-empty-description';
+	description.textContent = 'Start building your bookshelf by searching and adding books.';
+	description.setCssProps({
+		margin: "0 0 24px 0",
+		color: "var(--text-muted)"
+	});
+	emptyState.appendChild(description);
 
 		const addButton = doc.createElement('button');
 		addButton.className = 'mod-cta';

@@ -120,14 +120,19 @@ export abstract class BasesViewBase extends Component {
 		// Use correct document for pop-out window support
 		const doc = this.containerEl.ownerDocument;
 
-		// Don't clear containerEl - Bases manages it
-		// Just create our root element inside it
-		const rootEl = doc.createElement("div");
-		rootEl.className = "bookshelf-bases-view";
-		rootEl.style.cssText = "display: flex; flex-direction: column; height: 100%; width: 100%;";
-		rootEl.tabIndex = -1; // Make focusable without adding to tab order
-		this.containerEl.appendChild(rootEl);
-		this.rootElement = rootEl;
+	// Don't clear containerEl - Bases manages it
+	// Just create our root element inside it
+	const rootEl = doc.createElement("div");
+	rootEl.className = "bookshelf-bases-view";
+	rootEl.setCssProps({
+		display: "flex",
+		"flex-direction": "column",
+		height: "100%",
+		width: "100%"
+	});
+	rootEl.tabIndex = -1; // Make focusable without adding to tab order
+	this.containerEl.appendChild(rootEl);
+	this.rootElement = rootEl;
 
 		// Add custom "New Book" button and hide the default Bases "New" button
 		this.setupNewBookButton();
@@ -466,11 +471,15 @@ export abstract class BasesViewBase extends Component {
 		const doc = this.rootElement.ownerDocument;
 		this.rootElement.empty();
 
-		const errorEl = doc.createElement("div");
-		errorEl.className = "bookshelf-error";
-		errorEl.style.cssText = "padding: 20px; text-align: center; color: var(--text-error);";
-		errorEl.textContent = `Error: ${error.message}`;
-		this.rootElement.appendChild(errorEl);
+	const errorEl = doc.createElement("div");
+	errorEl.className = "bookshelf-error";
+	errorEl.setCssProps({
+		padding: "20px",
+		"text-align": "center",
+		color: "var(--text-error)"
+	});
+	errorEl.textContent = `Error: ${error.message}`;
+	this.rootElement.appendChild(errorEl);
 	}
 
 	/**

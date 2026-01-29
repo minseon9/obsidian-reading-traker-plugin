@@ -52,39 +52,57 @@ export class LibraryBasesView extends BasesViewBase {
 
 		const doc = this.rootElement.ownerDocument;
 
-		// Header
-		const header = doc.createElement('div');
-		header.className = 'bookshelf-header';
-		header.style.cssText = 'padding: 12px; border-bottom: 1px solid var(--background-modifier-border);';
+	// Header
+	const header = doc.createElement('div');
+	header.className = 'bookshelf-header';
+	header.setCssProps({
+		padding: "12px",
+		"border-bottom": "1px solid var(--background-modifier-border)"
+	});
 
-		const title = doc.createElement('h2');
-		title.textContent = `Unread & Finished (${this.unreadBooks.length} unread, ${this.finishedBooks.length} finished)`;
-		title.style.cssText = 'margin: 0; font-size: 1.2em;';
-		header.appendChild(title);
+	const title = doc.createElement('h2');
+	title.textContent = `Unread & Finished (${this.unreadBooks.length} unread, ${this.finishedBooks.length} finished)`;
+	title.setCssProps({
+		margin: "0",
+		"font-size": "1.2em"
+	});
+	header.appendChild(title);
 
-		this.rootElement.appendChild(header);
+	this.rootElement.appendChild(header);
 
-		// Content container
-		const contentContainer = doc.createElement('div');
-		contentContainer.style.cssText = 'flex: 1; overflow-y: auto; padding: 12px;';
+	// Content container
+	const contentContainer = doc.createElement('div');
+	contentContainer.setCssProps({
+		flex: "1",
+		"overflow-y": "auto",
+		padding: "12px"
+	});
 
 		// Render Unread section
 		if (this.unreadBooks.length > 0) {
 			this.renderSection(contentContainer, doc, 'Unread Books', this.unreadBooks, 'unread');
 		} else {
-			// Create section container for empty state
-			const unreadSectionContainer = doc.createElement('div');
-			unreadSectionContainer.style.cssText = 'margin-top: 24px;';
-			
-			// Section header
-			const sectionHeader = doc.createElement('div');
-			sectionHeader.style.cssText = 'margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--background-modifier-border);';
-			
-			const titleEl = doc.createElement('h3');
-			titleEl.textContent = 'Unread Books (0)';
-			titleEl.style.cssText = 'margin: 0; font-size: 1.2em; font-weight: 600;';
-			sectionHeader.appendChild(titleEl);
-			unreadSectionContainer.appendChild(sectionHeader);
+		// Create section container for empty state
+		const unreadSectionContainer = doc.createElement('div');
+		unreadSectionContainer.setCssProps({ "margin-top": "24px" });
+		
+		// Section header
+		const sectionHeader = doc.createElement('div');
+		sectionHeader.setCssProps({
+			"margin-bottom": "12px",
+			"padding-bottom": "8px",
+			"border-bottom": "2px solid var(--background-modifier-border)"
+		});
+		
+		const titleEl = doc.createElement('h3');
+		titleEl.textContent = 'Unread Books (0)';
+		titleEl.setCssProps({
+			margin: "0",
+			"font-size": "1.2em",
+			"font-weight": "600"
+		});
+		sectionHeader.appendChild(titleEl);
+		unreadSectionContainer.appendChild(sectionHeader);
 			
 			// Empty state inside section
 			this.renderEmptyState(unreadSectionContainer);
@@ -95,19 +113,27 @@ export class LibraryBasesView extends BasesViewBase {
 		if (this.finishedBooks.length > 0) {
 			this.renderSection(contentContainer, doc, 'Finished Books', this.finishedBooks, 'finished');
 		} else {
-			// Create section container for empty state
-			const finishedSectionContainer = doc.createElement('div');
-			finishedSectionContainer.style.cssText = 'margin-top: 24px;';
-			
-			// Section header
-			const sectionHeader = doc.createElement('div');
-			sectionHeader.style.cssText = 'margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--background-modifier-border);';
-			
-			const titleEl = doc.createElement('h3');
-			titleEl.textContent = 'Finished Books (0)';
-			titleEl.style.cssText = 'margin: 0; font-size: 1.2em; font-weight: 600;';
-			sectionHeader.appendChild(titleEl);
-			finishedSectionContainer.appendChild(sectionHeader);
+		// Create section container for empty state
+		const finishedSectionContainer = doc.createElement('div');
+		finishedSectionContainer.setCssProps({ "margin-top": "24px" });
+		
+		// Section header
+		const sectionHeader = doc.createElement('div');
+		sectionHeader.setCssProps({
+			"margin-bottom": "12px",
+			"padding-bottom": "8px",
+			"border-bottom": "2px solid var(--background-modifier-border)"
+		});
+		
+		const titleEl = doc.createElement('h3');
+		titleEl.textContent = 'Finished Books (0)';
+		titleEl.setCssProps({
+			margin: "0",
+			"font-size": "1.2em",
+			"font-weight": "600"
+		});
+		sectionHeader.appendChild(titleEl);
+		finishedSectionContainer.appendChild(sectionHeader);
 			
 			// Empty state inside section
 			this.renderEmptyState(finishedSectionContainer);
@@ -124,49 +150,79 @@ export class LibraryBasesView extends BasesViewBase {
 		books: Array<{ book: Book; file: TFile }>,
 		type: 'unread' | 'finished'
 	): void {
-		// Section header
-		const sectionHeader = doc.createElement('div');
-		sectionHeader.style.cssText = 'margin-top: 24px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--background-modifier-border);';
-		
-		const titleEl = doc.createElement('h3');
-		titleEl.textContent = `${title} (${books.length})`;
-		titleEl.style.cssText = 'margin: 0; font-size: 1.2em; font-weight: 600;';
-		sectionHeader.appendChild(titleEl);
-		container.appendChild(sectionHeader);
+	// Section header
+	const sectionHeader = doc.createElement('div');
+	sectionHeader.setCssProps({
+		"margin-top": "24px",
+		"margin-bottom": "12px",
+		"padding-bottom": "8px",
+		"border-bottom": "2px solid var(--background-modifier-border)"
+	});
+	
+	const titleEl = doc.createElement('h3');
+	titleEl.textContent = `${title} (${books.length})`;
+	titleEl.setCssProps({
+		margin: "0",
+		"font-size": "1.2em",
+		"font-weight": "600"
+	});
+	sectionHeader.appendChild(titleEl);
+	container.appendChild(sectionHeader);
 
-		// Books list
-		const list = doc.createElement('ul');
-		list.style.cssText = 'list-style: none; padding: 0; margin: 0;';
+	// Books list
+	const list = doc.createElement('ul');
+	list.setCssProps({
+		"list-style": "none",
+		padding: "0",
+		margin: "0"
+	});
 
-		books.forEach(({ book, file }) => {
-			const listItem = doc.createElement('li');
-			listItem.style.cssText = 'padding: 12px; border-bottom: 1px solid var(--background-modifier-border); cursor: pointer;';
-			listItem.addEventListener('click', (e) => {
-				// Only open if not prevented
-				if (e.defaultPrevented) return;
-				const app = this.app || this.plugin.app;
-				if (app) {
-					app.workspace.openLinkText(file.path, '', true);
-				}
-			});
-
-			// Title
-			const titleEl = doc.createElement('div');
-			titleEl.textContent = book.title;
-			titleEl.style.cssText = 'font-weight: 600; font-size: 14px; margin-bottom: 4px;';
-			listItem.appendChild(titleEl);
-
-			// Author
-			if (book.author && book.author.length > 0) {
-				const authorEl = doc.createElement('div');
-				authorEl.textContent = book.author.join(', ');
-				authorEl.style.cssText = 'font-size: 12px; color: var(--text-muted); margin-bottom: 4px;';
-				listItem.appendChild(authorEl);
+	books.forEach(({ book, file }) => {
+		const listItem = doc.createElement('li');
+		listItem.setCssProps({
+			padding: "12px",
+			"border-bottom": "1px solid var(--background-modifier-border)",
+			cursor: "pointer"
+		});
+		listItem.addEventListener('click', (e) => {
+			// Only open if not prevented
+			if (e.defaultPrevented) return;
+			const app = this.app || this.plugin.app;
+			if (app) {
+				app.workspace.openLinkText(file.path, '', true);
 			}
+		});
 
-			// Meta info
-			const metaEl = doc.createElement('div');
-			metaEl.style.cssText = 'font-size: 11px; color: var(--text-faint); display: flex; gap: 12px;';
+		// Title
+		const titleEl = doc.createElement('div');
+		titleEl.textContent = book.title;
+		titleEl.setCssProps({
+			"font-weight": "600",
+			"font-size": "14px",
+			"margin-bottom": "4px"
+		});
+		listItem.appendChild(titleEl);
+
+		// Author
+		if (book.author && book.author.length > 0) {
+			const authorEl = doc.createElement('div');
+			authorEl.textContent = book.author.join(', ');
+			authorEl.setCssProps({
+				"font-size": "12px",
+				color: "var(--text-muted)",
+				"margin-bottom": "4px"
+			});
+			listItem.appendChild(authorEl);
+		}
+
+		// Meta info
+		const metaEl = doc.createElement('div');
+		metaEl.setCssProps({
+			"font-size": "11px",
+			color: "var(--text-faint)",
+			display: "flex",
+			gap: "12px"
+		});
 			
 			if (type === 'finished' && book.readFinished) {
 				const finishedEl = doc.createElement('span');
@@ -192,24 +248,38 @@ export class LibraryBasesView extends BasesViewBase {
 	}
 
 
-	private renderEmptyState(container: HTMLElement): void {
-		const doc = container.ownerDocument;
-		const emptyState = doc.createElement('div');
-		emptyState.className = 'bookshelf-empty-state';
-		emptyState.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center;';
+private renderEmptyState(container: HTMLElement): void {
+	const doc = container.ownerDocument;
+	const emptyState = doc.createElement('div');
+	emptyState.className = 'bookshelf-empty-state';
+	emptyState.setCssProps({
+		display: "flex",
+		"flex-direction": "column",
+		"align-items": "center",
+		"justify-content": "center",
+		padding: "40px 20px",
+		"text-align": "center"
+	});
 
-		const icon = doc.createElement('div');
-		icon.className = 'bookshelf-empty-icon';
-		icon.textContent = '📚';
-		icon.style.cssText = 'font-size: 3em; margin-bottom: 12px;';
-		emptyState.appendChild(icon);
+	const icon = doc.createElement('div');
+	icon.className = 'bookshelf-empty-icon';
+	icon.textContent = '📚';
+	icon.setCssProps({
+		"font-size": "3em",
+		"margin-bottom": "12px"
+	});
+	emptyState.appendChild(icon);
 
-		const title = doc.createElement('div');
-		title.textContent = 'No books';
-		title.style.cssText = 'margin: 0; font-size: 1.1em; color: var(--text-muted);';
-		emptyState.appendChild(title);
+	const title = doc.createElement('div');
+	title.textContent = 'No books';
+	title.setCssProps({
+		margin: "0",
+		"font-size": "1.1em",
+		color: "var(--text-muted)"
+	});
+	emptyState.appendChild(title);
 
-		container.appendChild(emptyState);
-	}
+	container.appendChild(emptyState);
+}
 }
 
