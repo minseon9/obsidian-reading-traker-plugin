@@ -13,7 +13,6 @@ export class BookshelfSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 		
-		new Setting(containerEl).setName('General').setHeading();
 		new Setting(containerEl).setName('Folders').setHeading();
 		new Setting(containerEl)
 			.setName('Book notes folder')
@@ -29,7 +28,7 @@ export class BookshelfSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName('API').setHeading();
 		new Setting(containerEl)
 			.setName('Timeout (ms)')
-			.setDesc('Timeout duration for Open Library API requests (in milliseconds)')
+			.setDesc('Timeout duration for Open Library requests (in milliseconds)')
 			.addText(text => text
 				.setPlaceholder('5000')
 				.setValue(this.plugin.settings.apiTimeout.toString())

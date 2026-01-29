@@ -1,6 +1,6 @@
+/* eslint-disable obsidianmd/no-static-styles-assignment */
 import { App, TFile } from 'obsidian';
 import { Book } from '../models/book';
-import { BookStatus } from '../models/bookStatus';
 import BookshelfPlugin from '../main';
 import { ProgressUpdateModal } from './progressUpdateModal';
 
