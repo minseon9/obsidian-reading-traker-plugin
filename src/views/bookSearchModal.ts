@@ -15,7 +15,7 @@ export class SearchModal extends Modal {
 	private openLibraryClient: OpenLibraryClient;
 	private bookFileCreator: BookFileCreator;
 	private bookFileReader: BookFileReader;
-	private searchTimeout: NodeJS.Timeout | null = null;
+	private searchTimeout: ReturnType<typeof setTimeout> | null = null;
 	private currentResults: Book[] = [];
 	private currentOffset: number = 0;
 	private hasMoreResults: boolean = false;
@@ -33,12 +33,12 @@ export class SearchModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		contentEl.createEl('h2', { text: 'Search Books' });
+		contentEl.createEl('h2', { text: 'Search books' });
 
 		// Search input
 		new Setting(contentEl)
-			.setName('Search query')
-			.setDesc('Enter book title, author, or ISBN')
+		.setName('Search Query')
+		.setDesc('Enter book title, author or ISBN')
 			.addText(text => {
 				this.searchInput = text.inputEl;
 				this.searchInput.placeholder = 'Search for books...';
@@ -52,15 +52,19 @@ export class SearchModal extends Modal {
 			cls: 'bookshelf-loading',
 			text: 'Searching...',
 		});
-		this.loadingIndicator.style.display = 'none';
+	this.loadingIndicator.setCssProps({ display: "none" });
 
-		// Error message container (will be created dynamically)
+	// Error message container (will be created dynamically)
 
-		// Results container (scrollable)
-		this.resultsContainer = contentEl.createEl('div', {
-			cls: 'bookshelf-search-results',
-		});
-		this.resultsContainer.style.cssText = 'max-height: 60vh; overflow-y: auto; margin-top: 16px;';
+	// Results container (scrollable)
+	this.resultsContainer = contentEl.createEl('div', {
+		cls: 'bookshelf-search-results',
+	});
+	this.resultsContainer.setCssProps({
+		"max-height": "60vh",
+		"overflow-y": "auto",
+		"margin-top": "16px"
+	});
 
 		// Add scroll listener for infinite scroll
 		this.resultsContainer.addEventListener('scroll', () => {
@@ -105,7 +109,7 @@ export class SearchModal extends Modal {
 		this.hasMoreResults = false;
 
 		this.searchTimeout = setTimeout(() => {
-			this.performSearch(query, 0);
+			void this.performSearch(query, 0);
 		}, 500);
 	}
 
@@ -152,14 +156,14 @@ export class SearchModal extends Modal {
 		}
 	}
 
-	private async loadMoreResults() {
+	private loadMoreResults() {
 		if (this.isLoadingMore || !this.hasMoreResults) return;
 
 		const query = this.searchInput.value.trim();
 		if (!query) return;
 
 		this.isLoadingMore = true;
-		await this.performSearch(query, this.currentOffset);
+		void this.performSearch(query, this.currentOffset);
 	}
 
 	private renderResults(results: Book[]) {
@@ -194,9 +198,11 @@ export class SearchModal extends Modal {
 						alt: book.title,
 					},
 				});
-				coverImg.style.width = '80px';
-				coverImg.style.height = '120px';
-				coverImg.style.objectFit = 'cover';
+			coverImg.setCssProps({
+				width: "80px",
+				height: "120px",
+				"object-fit": "cover"
+			});
 			}
 
 			// Book info
@@ -230,15 +236,17 @@ export class SearchModal extends Modal {
 				});
 			}
 
-			// Add button
-			const addButton = infoContainer.createEl('button', {
-				cls: 'mod-cta',
-				text: 'Add Book',
-			});
+		// Add button
+		const addButton = infoContainer.createEl('button', {
+			cls: 'mod-cta',
+			text: 'Add book',
+		});
 
-			addButton.addEventListener('click', async () => {
-				await this.addBook(book);
-			});
+		const handleClick = async () => {
+			await this.addBook(book);
+		};
+		
+		addButton.addEventListener('click', () => void handleClick());
 
 			// Add separator (except for last item)
 			if (index < results.length - 1) {
@@ -252,7 +260,11 @@ export class SearchModal extends Modal {
 				cls: 'bookshelf-loading-more',
 				text: 'Loading more...',
 			});
-			loadingEl.style.cssText = 'text-align: center; padding: 16px; color: var(--text-muted);';
+			loadingEl.setCssProps({
+				"text-align": "center",
+				padding: "16px",
+				color: "var(--text-muted)"
+			});
 		}
 	}
 
@@ -311,31 +323,31 @@ export class SearchModal extends Modal {
 		});
 	}
 
-	private triggerViewRefresh(file: TFile): void {
-		try {
-			this.app.vault.trigger('modify', file);
-			this.app.workspace.iterateAllLeaves((leaf) => {
-				if (leaf.view?.getViewType?.() === 'bases') {
-					const basesView = leaf.view as any;
-					if (typeof basesView.requestUpdate === 'function') {
-						basesView.requestUpdate();
-					} else if (typeof basesView.refresh === 'function') {
-						basesView.refresh();
-					}
+private triggerViewRefresh(file: TFile): void {
+	try {
+		this.app.vault.trigger('modify', file);
+		this.app.workspace.iterateAllLeaves((leaf) => {
+			if (leaf.view?.getViewType?.() === 'bases') {
+				const basesView = leaf.view as { requestUpdate?: () => void; refresh?: () => void };
+				if (typeof basesView.requestUpdate === 'function') {
+					basesView.requestUpdate();
+				} else if (typeof basesView.refresh === 'function') {
+					basesView.refresh();
 				}
-			});
-		} catch (e) {
-			console.debug('[Bookshelf] Error triggering Bases refresh:', e);
-		}
+			}
+		});
+	} catch (e) {
+		console.debug('[Bookshelf] Error triggering Bases refresh:', e);
 	}
+}
 
-	private showLoading() {
-		this.loadingIndicator.style.display = 'block';
-	}
+private showLoading() {
+	this.loadingIndicator.setCssProps({ display: "block" });
+}
 
-	private hideLoading() {
-		this.loadingIndicator.style.display = 'none';
-	}
+private hideLoading() {
+	this.loadingIndicator.setCssProps({ display: "none" });
+}
 
 	private showError(message: string) {
 		const existing = this.contentEl.querySelector('.bookshelf-message');
@@ -364,11 +376,19 @@ export class SearchModal extends Modal {
 		const existing = this.contentEl.querySelector('.bookshelf-message-success');
 		if (existing) existing.remove();
 
-		// Create simple success message with Obsidian accent color at the bottom
-		const messageContainer = this.contentEl.createEl('div', {
-			cls: 'bookshelf-message-success',
-		});
-		messageContainer.style.cssText = 'padding: 12px; margin-top: 16px; background-color: transparent; color: var(--interactive-accent); font-size: 14px; text-align: center; font-weight: 500;';
+	// Create simple success message with Obsidian accent color at the bottom
+	const messageContainer = this.contentEl.createEl('div', {
+		cls: 'bookshelf-message-success',
+	});
+	messageContainer.setCssProps({
+		padding: "12px",
+		"margin-top": "16px",
+		"background-color": "transparent",
+		color: "var(--interactive-accent)",
+		"font-size": "14px",
+		"text-align": "center",
+		"font-weight": "500"
+	});
 
 		messageContainer.createEl('span', {
 			text: message,

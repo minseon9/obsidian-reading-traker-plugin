@@ -2,7 +2,6 @@ import { TFile } from 'obsidian';
 import { Book } from '../../models/book';
 import { BasesViewBase } from './base';
 import { BookCard } from '../bookCard';
-import BookshelfPlugin from '../../main';
 
 /**
  * Reading View - Displays books currently being read
@@ -46,21 +45,34 @@ export class ReadingBasesView extends BasesViewBase {
 
 		const doc = this.rootElement.ownerDocument;
 
-		// Header
-		const header = doc.createElement('div');
-		header.className = 'bookshelf-header';
-		header.style.cssText = 'padding: 12px; border-bottom: 1px solid var(--background-modifier-border);';
+	// Header
+	const header = doc.createElement('div');
+	header.className = 'bookshelf-header';
+	header.setCssProps({
+		padding: "12px",
+		"border-bottom": "1px solid var(--background-modifier-border)"
+	});
 
-		const title = doc.createElement('h2');
-		title.textContent = `Reading (${this.books.length})`;
-		title.style.cssText = 'margin: 0; font-size: 1.2em;';
-		header.appendChild(title);
-		this.rootElement.appendChild(header);
+	const title = doc.createElement('h2');
+	title.textContent = `Reading (${this.books.length})`;
+	title.setCssProps({
+		margin: "0",
+		"font-size": "1.2em"
+	});
+	header.appendChild(title);
+	this.rootElement.appendChild(header);
 
-		// Books container (always grid for reading books)
-		const booksContainer = doc.createElement('div');
-		booksContainer.className = 'bookshelf-books-container bookshelf-layout-grid';
-		booksContainer.style.cssText = 'flex: 1; overflow-y: auto; padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;';
+	// Books container (always grid for reading books)
+	const booksContainer = doc.createElement('div');
+	booksContainer.className = 'bookshelf-books-container bookshelf-layout-grid';
+	booksContainer.setCssProps({
+		flex: "1",
+		"overflow-y": "auto",
+		padding: "12px",
+		display: "grid",
+		"grid-template-columns": "repeat(auto-fill, minmax(200px, 1fr))",
+		gap: "16px"
+	});
 
 		if (this.books.length === 0) {
 			this.renderEmptyState(booksContainer);
@@ -75,28 +87,44 @@ export class ReadingBasesView extends BasesViewBase {
 		this.rootElement.appendChild(booksContainer);
 	}
 
-	private renderEmptyState(container: HTMLElement): void {
-		const doc = container.ownerDocument;
-		const emptyState = doc.createElement('div');
-		emptyState.className = 'bookshelf-empty-state';
-		emptyState.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center;';
+private renderEmptyState(container: HTMLElement): void {
+	const doc = container.ownerDocument;
+	const emptyState = doc.createElement('div');
+	emptyState.className = 'bookshelf-empty-state';
+	emptyState.setCssProps({
+		display: "flex",
+		"flex-direction": "column",
+		"align-items": "center",
+		"justify-content": "center",
+		padding: "60px 20px",
+		"text-align": "center"
+	});
 
-		const icon = doc.createElement('div');
-		icon.textContent = '📖';
-		icon.style.cssText = 'font-size: 4em; margin-bottom: 16px;';
-		emptyState.appendChild(icon);
+	const icon = doc.createElement('div');
+	icon.textContent = '📖';
+	icon.setCssProps({
+		"font-size": "4em",
+		"margin-bottom": "16px"
+	});
+	emptyState.appendChild(icon);
 
-		const title = doc.createElement('h2');
-		title.textContent = 'No books being read';
-		title.style.cssText = 'margin: 0 0 8px 0; font-size: 1.5em;';
-		emptyState.appendChild(title);
+	const title = doc.createElement('h2');
+	title.textContent = 'No books being read';
+	title.setCssProps({
+		margin: "0 0 8px 0",
+		"font-size": "1.5em"
+	});
+	emptyState.appendChild(title);
 
-		const description = doc.createElement('p');
-		description.textContent = 'Start reading a book to see it here.';
-		description.style.cssText = 'margin: 0 0 24px 0; color: var(--text-muted);';
-		emptyState.appendChild(description);
+	const description = doc.createElement('p');
+	description.textContent = 'Start reading a book to see it here.';
+	description.setCssProps({
+		margin: "0 0 24px 0",
+		color: "var(--text-muted)"
+	});
+	emptyState.appendChild(description);
 
-		container.appendChild(emptyState);
-	}
+	container.appendChild(emptyState);
+}
 }
 
