@@ -1,4 +1,4 @@
-# Obsidian Bookshelf
+# Obsidian Reading Tracker
 A reading tracker for importing books from Open Library, organizing your reading shelves, and analyzing your reading habits.
 
 ## Overview
