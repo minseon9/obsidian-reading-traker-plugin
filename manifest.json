@@ -1,7 +1,7 @@
 {
 	"id": "reading-tracker",
 	"name": "Reading Tracker",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"minAppVersion": "0.15.0",
 	"description": "Reading Tracker for importing books from Open Library, organizing your reading shelves, and analyzing your reading habits.",
 	"author": "minseon9",
