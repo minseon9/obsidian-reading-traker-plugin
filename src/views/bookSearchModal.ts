@@ -38,7 +38,6 @@ export class SearchModal extends Modal {
 		// Search input
 		new Setting(contentEl)
 		.setName('Search query')
-		// eslint-disable-next-line obsidianmd/ui/sentence-case
 		.setDesc('Enter book title, author or ISBN')
 			.addText(text => {
 				this.searchInput = text.inputEl;
@@ -310,7 +309,7 @@ export class SearchModal extends Modal {
 
 	private async validateBookNotExists(book: Book): Promise<void> {
 		const booksFolder = PathManager.getBooksFolderPath(this.plugin.settings.bookFolder);
-		const existingFile = await this.bookFileReader.findExisting(booksFolder, book.title);
+		const existingFile = this.bookFileReader.findExisting(booksFolder, book.title);
 		if (existingFile) {
 			throw new Error(`Book "${book.title}" already exists.`);
 		}

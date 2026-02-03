@@ -17,7 +17,7 @@ export async function registerBasesBookshelfView(plugin: BookshelfPlugin): Promi
 		return;
 	}
 
-	const attemptRegistration = async (): Promise<boolean> => {
+	const attemptRegistration = (): boolean => {
 		try {
 			// Register Bookshelf View (all books)
 			const bookshelfSuccess = registerBasesView(plugin, "bookshelfView", {
@@ -85,14 +85,14 @@ export async function registerBasesBookshelfView(plugin: BookshelfPlugin): Promi
 	};
 
 	// Try immediate registration
-	if (await attemptRegistration()) {
+	if (attemptRegistration()) {
 		return;
 	}
 
 	// If that fails, try a few more times with short delays
 	for (let i = 0; i < 5; i++) {
 		await new Promise((r) => setTimeout(r, 200));
-		if (await attemptRegistration()) {
+		if (attemptRegistration()) {
 			return;
 		}
 	}

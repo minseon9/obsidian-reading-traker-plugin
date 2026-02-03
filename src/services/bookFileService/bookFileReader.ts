@@ -24,7 +24,7 @@ export class BookFileReader {
 		return book;
 	}
 
-	async findExisting(folderPath: string, title: string): Promise<TFile | null> {
+	findExisting(folderPath: string, title: string): TFile | null {
 		const fileName = `${FileNameGenerator.generate(title)}.md`;
 		const filePath = normalizePath(`${folderPath}/${fileName}`);
 		const file = this.app.vault.getAbstractFileByPath(filePath);

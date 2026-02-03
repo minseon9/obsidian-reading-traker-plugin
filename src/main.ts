@@ -89,7 +89,7 @@ export default class BookshelfPlugin extends Plugin {
 	/**
 	 * Add progress update button to book note
 	 */
-	private async addProgressButtonToNote(file: TFile): Promise<void> {
+	private addProgressButtonToNote(file: TFile): void {
 		if (!file || file.extension !== 'md') {
 			return;
 		}
